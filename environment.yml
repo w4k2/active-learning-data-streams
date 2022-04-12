@@ -1,0 +1,15 @@
+name: active-learning
+channels:
+  - defaults
+dependencies:
+  - python=3.8.5
+  - numpy
+  - scikit-learn
+  - pip
+  - matplotlib
+  - tqdm
+  - pandas
+  - autopep8
+  - pip:
+    - stream-learn
+    - imbalanced-learn
