@@ -44,7 +44,7 @@ class OnlineBagging(StreamingEnsemble):
         return self
 
 
-def select_al_seed(stream, seed_percentage):
+def select_seed(stream, seed_percentage):
     seed_size = int(stream.n_chunks * seed_percentage)
 
     data = []

@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from strlearn.streams import StreamGenerator
-from utils import select_al_seed
+from utils import select_seed
 from main import get_base_model
 
 
@@ -39,7 +39,7 @@ def main():
         random_state=2042,
     )
 
-    data, target, stream = select_al_seed(stream, args.seed_percentage)
+    data, target, stream = select_seed(stream, args.seed_percentage)
     if args.ensemble:
         model = Ensemble([get_base_model(args.base_model) for _ in range(5)])
     else:

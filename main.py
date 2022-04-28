@@ -1,11 +1,13 @@
 import numpy as np
 import argparse
 import os
+import math
+import matplotlib.pyplot as plt
 
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 from strlearn.streams import StreamGenerator
-from utils import select_al_seed, OnlineBagging
+from utils import select_seed, OnlineBagging
 
 
 def main():
@@ -18,8 +20,9 @@ def main():
         random_state=2042,
     )
 
-    data, target, stream = select_al_seed(stream, args.seed_percentage)
+    data, target, stream = select_seed(stream, args.seed_percentage)
     pool = generate_classifier_pool(data, target, base_classifier=args.base_model)
+    # plot_confidence(pool, data, target)
 
     all_preds, all_targets = stream_learning(stream, pool, prediction_threshold=args.prediction_threshold, budget=args.budget)
 
@@ -171,6 +174,34 @@ def retrain(model_pool, obj, label, poisson_lambda):
         new_pool.append(model)
 
     return new_pool
+
+
+def plot_confidence(pool, data, target):
+    for i, model in enumerate(pool):
+        correct_predictions = [0 for _ in range(10)]
+        all_predictions = [0 for _ in range(10)]
+        for x, y in zip(data, target):
+            y_pred = model.predict_proba(np.expand_dims(x, axis=0))
+
+            interval_idx = math.floor(np.max(y_pred)*10)
+            if interval_idx == 10:
+                interval_idx = 9
+            all_predictions[interval_idx] += 1
+            if np.argmax(y_pred, axis=1) == y:
+                correct_predictions[interval_idx] += 1
+
+        confidence_plot = [correct/num_all if num_all != 0 else 0 for correct, num_all in zip(correct_predictions, all_predictions)]
+
+        plt.subplot(len(pool), 2, i*2 + 1)
+        plt.bar(list(range(10)), confidence_plot)
+        plt.xlabel('confidence intervals')
+        plt.ylabel('accuracy')
+
+        plt.subplot(len(pool), 2, i*2 + 2)
+        plt.bar(list(range(10)), all_predictions)
+        plt.xlabel('confidence intervals')
+        plt.ylabel('number of predictions')
+    plt.show()
 
 
 if __name__ == '__main__':
