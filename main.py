@@ -24,11 +24,13 @@ def main():
     pool = generate_classifier_pool(data, target, base_classifier=args.base_model)
     # plot_confidence(pool, data, target)
 
-    all_preds, all_targets = stream_learning(stream, pool, prediction_threshold=args.prediction_threshold, budget=args.budget)
+    all_preds, all_targets, budget_end = stream_learning(stream, pool, prediction_threshold=args.prediction_threshold, budget=args.budget)
 
     os.makedirs('results/ours', exist_ok=True)
-    np.save(f'results/ours/preds_{args.base_model}_{args.stream_len}_seed_{args.seed_percentage}_budget_{args.budget}_prediction_threshold_{args.prediction_threshold}.npy', all_preds)
-    np.save(f'results/ours/targets_{args.base_model}_{args.stream_len}_seed_{args.seed_percentage}_budget_{args.budget}_prediction_threshold_{args.prediction_threshold}.npy', all_targets)
+    experiment_parameters = f'{args.base_model}_{args.stream_len}_seed_{args.seed_percentage}_budget_{args.budget}_prediction_threshold_{args.prediction_threshold}'
+    np.save(f'results/ours/preds_{experiment_parameters}.npy', all_preds)
+    np.save(f'results/ours/targets_{experiment_parameters}.npy', all_targets)
+    np.save(f'results/ours/budget_end_{experiment_parameters}.npy', budget_end)
 
 
 def parse_args():
@@ -86,9 +88,15 @@ def get_model_dataset(data, target):
 def stream_learning(stream, model_pool, prediction_threshold=0.7, budget=100):
     all_predictions = []
     all_targets = []
+    budget_end = -1
 
     for i, (obj, target) in enumerate(stream):
         supports, predictions = pool_inference(model_pool, obj)
+
+        avrg_pred = np.mean(supports, axis=0)
+        pred = np.argmax(avrg_pred)
+        all_predictions.append(pred)
+        all_targets.append(target)
 
         confident_supports = []
         confident_preds = []
@@ -98,36 +106,28 @@ def stream_learning(stream, model_pool, prediction_threshold=0.7, budget=100):
                 confident_supports.append(max_supp)
                 confident_preds.append(pred)
 
-        if len(confident_supports) > 0:
-            if all(pred == confident_preds[0] for pred in confident_preds):
-                max_supp = max(confident_supports)
-                poisson_lambda = max_supp / prediction_threshold
-                label = confident_preds[0]
-                label = np.expand_dims(label, 0)
-                model_pool = retrain(model_pool, obj, label, poisson_lambda)
-                # if label != target:
-                #     print('training with wrong target')
-                #     print('max_support = ', supports)
-                #     print('predictions = ', predictions)
-                #     print('target = ', target)
-                #     print('poisson_lambda = ', poisson_lambda)
-                # pass
-            else:
-                model_pool, budget = training_on_budget(model_pool, prediction_threshold, budget, obj, target, supports, predictions)
+        if len(confident_supports) > 0 and all(pred == confident_preds[0] for pred in confident_preds):
+            max_supp = max(confident_supports)
+            poisson_lambda = max_supp / prediction_threshold
+            label = confident_preds[0]
+            label = np.expand_dims(label, 0)
+            model_pool = retrain(model_pool, obj, label, poisson_lambda)
+            # if label != target:
+            #     print('training with wrong target')
+            #     print('max_support = ', supports)
+            #     print('predictions = ', predictions)
+            #     print('target = ', target)
+            #     print('poisson_lambda = ', poisson_lambda)
         else:
             model_pool, budget = training_on_budget(model_pool, prediction_threshold, budget, obj, target, supports, predictions)
 
         if budget == 0:
             budget = -1
+            budget_end = i
             print(f'budget ended at {i}')
 
-        avrg_pred = np.mean(supports, axis=0)
-        pred = np.argmax(avrg_pred)
-        all_predictions.append(pred)
-        all_targets.append(target)
-
     print(f'budget after training = {budget}')
-    return all_predictions, all_targets
+    return all_predictions, all_targets, budget_end
 
 
 def pool_inference(model_pool, obj):
@@ -151,14 +151,13 @@ def training_on_budget(model_pool, prediction_threshold, budget, obj, target, su
         label = predictions[idx]
         label = np.expand_dims(label, 0)
         poisson_lambda = abs(prediction_threshold - max_supp) / prediction_threshold
-        if label != target:
-            print('training with wrong target')
-            print('max_support = ', supports)
-            print('predictions = ', predictions)
-            print('target = ', target)
-            print('poisson_lambda = ', poisson_lambda)
-        model_pool = retrain(model_pool, obj, label, poisson_lambda)
-        # pass
+        # if label != target:
+        #     print('training with wrong target')
+        #     print('max_support = ', supports)
+        #     print('predictions = ', predictions)
+        #     print('target = ', target)
+        #     print('poisson_lambda = ', poisson_lambda)
+        # model_pool = retrain(model_pool, obj, label, poisson_lambda)
     return model_pool, budget
 
 
