@@ -10,6 +10,7 @@ from main import get_base_model
 
 
 def main():
+    np.random.seed(42)
     args = parse_args()
 
     seed_data, seed_target, train_stream, test_X, test_y = utils.utils.get_data(args.stream_len, args.seed_percentage)
@@ -43,32 +44,23 @@ def parse_args():
     parser.add_argument('--ensemble_diversify', action='store_true')
     parser.add_argument('--num_classifiers', type=int, default=9)
 
-
     args = parser.parse_args()
     return args
 
 
 def stream_learning_baseline(train_stream, test_X, test_y, model, args, budget=100, prediction_threshold=0.5):
-    all_predictions = []
-    all_targets = []
     acc = []
     budget_end = -1
 
     for i, (obj, target) in enumerate(train_stream):
-        all_targets.append(target)
         if args.method == 'all_labeled':
-            pred = model.predict(obj)
-            all_predictions.append(pred)
             model.partial_fit(obj, target)
-        elif args.method == 'confidence':
+        elif args.method == 'confidence' and budget > 0:
             pred_prob = model.predict_proba(obj)
-            pred = np.argmax(pred_prob, axis=1)
-            all_predictions.append(pred)
-            if budget > 0:
-                max_prob = np.max(pred_prob, axis=1)[0]
-                if max_prob < prediction_threshold:
-                    model.partial_fit(obj, target)
-                    budget -= 1
+            max_prob = np.max(pred_prob, axis=1)[0]
+            if max_prob < prediction_threshold:
+                model.partial_fit(obj, target)
+                budget -= 1
 
         if budget == 0:
             budget = -1

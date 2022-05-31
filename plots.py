@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import accuracy_score
 from baselines import parse_args
 import utils.diversity
 
@@ -28,13 +27,12 @@ def plot_model(model_name, args):
 
     for i, (filepath, result_label) in enumerate(zip(results, plot_labels)):
         acc = np.load(filepath.format('acc', model_name, args.stream_len, args.seed_percentage, args.budget))
-        targets = np.load(filepath.format('targets', model_name, args.stream_len, args.seed_percentage, args.budget))
         budget_end = np.load(filepath.format('budget_end', model_name, args.stream_len, args.seed_percentage, args.budget))
         print('budget_end = ', budget_end)
 
         if result_label == 'ours':
             classifier_preds = np.load(filepath.format('all_ensemble_pred', model_name, args.stream_len, args.seed_percentage, args.budget))
-            print(classifier_preds.shape)
+            targets = np.load(filepath.format('targets', model_name, args.stream_len, args.seed_percentage, args.budget))
             diversity = utils.diversity.cumulative_q_statistic(classifier_preds, targets)
 
         plt.plot(acc, color=f"C{i}", label=result_label)

@@ -2,8 +2,6 @@ import numpy as np
 
 
 def cumulative_q_statistic(classifier_preds, targets):
-    print('classifier_preds shape = ', classifier_preds.shape)
-    print('targets shape = ', targets.shape)
     result = []
     for i in range(1, classifier_preds.shape[0]):
         result.append(q_statistic(classifier_preds[i], targets))

@@ -52,6 +52,7 @@ def get_data(stream_len, seed_percentage):
         chunk_size=1,
         n_drifts=0,
         random_state=2042,
+        y_flip=0.0,
     )
 
     seed_data, seed_target, stream = select_seed(stream, seed_percentage)

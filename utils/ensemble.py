@@ -34,7 +34,7 @@ class Ensemble:
 
     def predict(self, data):
         pred_prob = self.predict_proba(data)
-        pred_label = np.argmax(pred_prob, axis=-1) # TODO should axis be 1 instead of -1 ???
+        pred_label = np.argmax(pred_prob, axis=-1)  # TODO should axis be 1 instead of -1 ???
         return pred_label
 
     def predict_proba(self, data):
@@ -50,6 +50,12 @@ class Ensemble:
         predictions = np.stack(predictions, axis=0)
         return predictions
 
-    def partial_fit(self, data, target):
+    def partial_fit(self, data, target, poisson_lambda=1.0):
         for model in self.models:
-            model.partial_fit(data, target)
+            if self.diversify:
+                num_repeats = np.random.poisson(lam=poisson_lambda)
+                for _ in range(num_repeats):
+                    target = np.ravel(target)
+                    model.partial_fit(data, target)
+            else:
+                model.partial_fit(data, target)

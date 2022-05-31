@@ -12,6 +12,7 @@ from utils.ensemble import Ensemble
 
 
 def main():
+    np.random.seed(42)
     args = parse_args()
 
     seed_data, seed_target, train_stream, test_X, test_y = get_data(args.stream_len, args.seed_percentage)
@@ -19,7 +20,8 @@ def main():
     pool.fit(seed_data, seed_target)
     # plot_confidence(pool, data, target)
 
-    acc, budget_end, all_ensemble_pred = stream_learning(train_stream, test_X, test_y, pool, prediction_threshold=args.prediction_threshold, budget=args.budget)
+    acc, budget_end, all_ensemble_pred = stream_learning(train_stream, test_X, test_y, pool,
+                                                         prediction_threshold=args.prediction_threshold, budget=args.budget)
 
     os.makedirs('results/ours', exist_ok=True)
     experiment_parameters = f'{args.base_model}_{args.stream_len}_seed_{args.seed_percentage}_budget_{args.budget}_prediction_threshold_{args.prediction_threshold}'
@@ -31,6 +33,7 @@ def main():
 
 def parse_args():
     parser = argparse.ArgumentParser()
+
     parser.add_argument('--stream_len', type=int, default=5000)
     parser.add_argument('--seed_percentage', type=float, default=0.1)
     parser.add_argument('--budget', type=int, default=100)
@@ -77,7 +80,7 @@ def stream_learning(train_stream, test_X, test_y, model_pool, prediction_thresho
             label = confident_preds[0]
             label = np.expand_dims(label, 0)
             # if i < 1500:
-            retrain(model_pool, obj, label, poisson_lambda)
+            model_pool.partial_fit(obj, label, poisson_lambda)
             # if label != target:
             #     print('training with wrong target')
             #     print('max_support = ', supports)
@@ -96,19 +99,17 @@ def stream_learning(train_stream, test_X, test_y, model_pool, prediction_thresho
         test_supports = model_pool.predict_proba_separate(test_X)
         test_predictions = np.argmax(test_supports, axis=2)
         all_ensemble_pred.append(test_predictions)
-        test_avrg_pred = np.mean(test_supports, axis=0)
-        test_pred = np.argmax(test_avrg_pred, axis=1)
+        test_pred = model_pool.predict(test_X)
         acc.append(accuracy_score(test_y, test_pred))
 
     print(f'budget after training = {budget}')
     all_ensemble_pred = np.array(all_ensemble_pred)
-    # print(all_ensemble_pred.shape)  # (3375, 9, 1125)
     return acc, budget_end, all_ensemble_pred
 
 
 def training_on_budget(model_pool, prediction_threshold, budget, obj, target, supports, predictions):
     if budget > 0:
-        retrain(model_pool, obj, target, 1.0)
+        model_pool.partial_fit(obj, target, poisson_lambda=1.0)
         budget -= 1
     else:
         idx = np.argmax([np.max(s) for s in supports])
@@ -122,16 +123,8 @@ def training_on_budget(model_pool, prediction_threshold, budget, obj, target, su
         #     print('predictions = ', predictions)
         #     print('target = ', target)
         #     print('poisson_lambda = ', poisson_lambda)
-        retrain(model_pool, obj, label, poisson_lambda)
+        model_pool.partial_fit(obj, label, poisson_lambda)
     return budget
-
-
-def retrain(model_pool, obj, label, poisson_lambda):
-    for model in model_pool.models:
-        num_repeats = np.random.poisson(lam=poisson_lambda)
-        for _ in range(num_repeats):
-            label = np.ravel(label)
-            model.partial_fit(obj, label)
 
 
 def plot_confidence(pool, data, target):
