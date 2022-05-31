@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import accuracy_score
 from baselines import parse_args
+import utils.diversity
 
 
 def main():
@@ -21,13 +22,20 @@ def plot_model(model_name, args):
     ]
     plot_labels = ['ours', 'all labeled', 'all labeled ensemble', 'confidence']
 
+    diversity = None
+
+    plt.subplot(2, 1, 1)
+
     for i, (filepath, result_label) in enumerate(zip(results, plot_labels)):
-        preds = np.load(filepath.format('preds', model_name, args.stream_len, args.seed_percentage, args.budget))
+        acc = np.load(filepath.format('acc', model_name, args.stream_len, args.seed_percentage, args.budget))
         targets = np.load(filepath.format('targets', model_name, args.stream_len, args.seed_percentage, args.budget))
         budget_end = np.load(filepath.format('budget_end', model_name, args.stream_len, args.seed_percentage, args.budget))
         print('budget_end = ', budget_end)
 
-        acc = accumulative_acc(targets, preds)
+        if result_label == 'ours':
+            classifier_preds = np.load(filepath.format('all_ensemble_pred', model_name, args.stream_len, args.seed_percentage, args.budget))
+            diversity = utils.diversity.cumulative_q_statistic(classifier_preds, targets)
+
         # acc = acc[50:]
         # budget_end -= 50
         plt.plot(acc, color=f"C{i}", label=result_label)
@@ -37,12 +45,8 @@ def plot_model(model_name, args):
 
     plt.legend()
 
-
-def accumulative_acc(targets, preds):
-    acc = []
-    for i in range(1, len(preds)):
-        acc.append(accuracy_score(targets[:i], preds[:i]))
-    return acc
+    plt.subplot(2, 1, 2)
+    plt.plot(diversity)
 
 
 if __name__ == '__main__':

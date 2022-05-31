@@ -2,8 +2,8 @@ import argparse
 import os
 import numpy as np
 
-from strlearn.streams import StreamGenerator
-from utils import select_seed
+import utils.utils
+from sklearn.metrics import accuracy_score
 from main import get_base_model, get_model_dataset
 
 
@@ -38,29 +38,21 @@ class Ensemble:
 def main():
     args = parse_args()
 
-    stream = StreamGenerator(
-        n_chunks=args.stream_len,
-        chunk_size=1,
-        n_drifts=0,
-        random_state=2042,
-    )
-
-    data, target, stream = select_seed(stream, args.seed_percentage)
+    seed_data, seed_target, train_stream, test_X, test_y = utils.utils.get_data(args.stream_len, args.seed_percentage)
     if args.ensemble:
         model = Ensemble([get_base_model(args.base_model) for _ in range(5)], diversify=args.ensemble_diversify)
     else:
         model = get_base_model(args.base_model)
-    model.fit(data, target)
+    model.fit(seed_data, seed_target)
 
-    all_preds, all_targets, budget_end = stream_learning_baseline(stream, model, args, budget=args.budget, prediction_threshold=args.prediction_threshold)
+    acc, budget_end = stream_learning_baseline(train_stream, test_X, test_y, model, args, budget=args.budget, prediction_threshold=args.prediction_threshold)
 
     method_name = f'{args.method}'
     if args.ensemble:
         method_name += '_ensemble'
     os.makedirs(f'results/{method_name}', exist_ok=True)
     experiment_parameters = f'{args.base_model}_{args.stream_len}_seed_{args.seed_percentage}_budget_{args.budget}'
-    np.save(f'results/{method_name}/preds_{experiment_parameters}.npy', all_preds)
-    np.save(f'results/{method_name}/targets_{experiment_parameters}.npy', all_targets)
+    np.save(f'results/{method_name}/acc_{experiment_parameters}.npy', acc)
     np.save(f'results/{method_name}/budget_end_{experiment_parameters}.npy', budget_end)
 
 
@@ -80,12 +72,13 @@ def parse_args():
     return args
 
 
-def stream_learning_baseline(stream, model, args, budget=100, prediction_threshold=0.5):
+def stream_learning_baseline(train_stream, test_X, test_y, model, args, budget=100, prediction_threshold=0.5):
     all_predictions = []
     all_targets = []
+    acc = []
     budget_end = -1
 
-    for i, (obj, target) in enumerate(stream):
+    for i, (obj, target) in enumerate(train_stream):
         all_targets.append(target)
         if args.method == 'all_labeled':
             pred = model.predict(obj)
@@ -106,8 +99,11 @@ def stream_learning_baseline(stream, model, args, budget=100, prediction_thresho
             budget_end = i
             print(f'budget ended at {i}')
 
+        test_pred = model.predict(test_X)
+        acc.append(accuracy_score(test_y, test_pred))
+
     print(f'budget after training = {budget}')
-    return all_predictions, all_targets, budget_end
+    return acc, budget_end
 
 
 if __name__ == '__main__':

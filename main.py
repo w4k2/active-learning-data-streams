@@ -6,31 +6,24 @@ import matplotlib.pyplot as plt
 
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
-from strlearn.streams import StreamGenerator
-from utils import select_seed, OnlineBagging
+from sklearn.metrics import accuracy_score
+from utils.utils import get_data, OnlineBagging
 
 
 def main():
     args = parse_args()
 
-    stream = StreamGenerator(
-        n_chunks=args.stream_len,
-        chunk_size=1,
-        n_drifts=0,
-        random_state=2042,
-    )
-
-    data, target, stream = select_seed(stream, args.seed_percentage)
-    pool = generate_classifier_pool(data, target, base_classifier=args.base_model)
+    seed_data, seed_target, train_stream, test_X, test_y = get_data(args.stream_len, args.seed_percentage)
+    pool = generate_classifier_pool(seed_data, seed_target, num_classifiers=args.num_classifiers, base_classifier=args.base_model)
     # plot_confidence(pool, data, target)
 
-    all_preds, all_targets, budget_end = stream_learning(stream, pool, prediction_threshold=args.prediction_threshold, budget=args.budget)
+    acc, budget_end, all_ensemble_pred = stream_learning(train_stream, test_X, test_y, pool, prediction_threshold=args.prediction_threshold, budget=args.budget)
 
     os.makedirs('results/ours', exist_ok=True)
     experiment_parameters = f'{args.base_model}_{args.stream_len}_seed_{args.seed_percentage}_budget_{args.budget}_prediction_threshold_{args.prediction_threshold}'
-    np.save(f'results/ours/preds_{experiment_parameters}.npy', all_preds)
-    np.save(f'results/ours/targets_{experiment_parameters}.npy', all_targets)
+    np.save(f'results/ours/acc_{experiment_parameters}.npy', acc)
     np.save(f'results/ours/budget_end_{experiment_parameters}.npy', budget_end)
+    np.save(f'results/ours/all_ensemble_pred_{experiment_parameters}.npy', all_ensemble_pred)
 
 
 def parse_args():
@@ -40,6 +33,7 @@ def parse_args():
     parser.add_argument('--budget', type=int, default=100)
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
     parser.add_argument('--base_model', choices=('mlp', 'ng'), default='mlp')
+    parser.add_argument('--num_classifiers', type=int, default=9)
 
     args = parser.parse_args()
     return args
@@ -85,18 +79,16 @@ def get_model_dataset(data, target):
     return selected_data, selected_target
 
 
-def stream_learning(stream, model_pool, prediction_threshold=0.7, budget=100):
-    all_predictions = []
-    all_targets = []
+def stream_learning(train_stream, test_X, test_y, model_pool, prediction_threshold=0.7, budget=100):
+    all_ensemble_pred = []
+    acc = []
     budget_end = -1
 
-    for i, (obj, target) in enumerate(stream):
+    for i, (obj, target) in enumerate(train_stream):
         supports, predictions = pool_inference(model_pool, obj)
 
         avrg_pred = np.mean(supports, axis=0)
         pred = np.argmax(avrg_pred)
-        all_predictions.append(pred)
-        all_targets.append(target)
 
         confident_supports = []
         confident_preds = []
@@ -111,6 +103,7 @@ def stream_learning(stream, model_pool, prediction_threshold=0.7, budget=100):
             poisson_lambda = max_supp / prediction_threshold
             label = confident_preds[0]
             label = np.expand_dims(label, 0)
+            # if i < 1500:
             model_pool = retrain(model_pool, obj, label, poisson_lambda)
             # if label != target:
             #     print('training with wrong target')
@@ -119,6 +112,7 @@ def stream_learning(stream, model_pool, prediction_threshold=0.7, budget=100):
             #     print('target = ', target)
             #     print('poisson_lambda = ', poisson_lambda)
         else:
+            # if i < 1500:
             model_pool, budget = training_on_budget(model_pool, prediction_threshold, budget, obj, target, supports, predictions)
 
         if budget == 0:
@@ -126,8 +120,16 @@ def stream_learning(stream, model_pool, prediction_threshold=0.7, budget=100):
             budget_end = i
             print(f'budget ended at {i}')
 
+        test_supports, test_predictions = pool_inference(model_pool, test_X)
+        all_ensemble_pred.append(test_predictions)
+        # print('test_supports shape = ', test_supports.shape)
+        test_avrg_pred = np.mean(test_supports, axis=0)
+        # print('test_avrg_pred shape = ', test_avrg_pred.shape)
+        test_pred = np.argmax(test_avrg_pred, axis=1)
+        acc.append(accuracy_score(test_y, test_pred))
+
     print(f'budget after training = {budget}')
-    return all_predictions, all_targets, budget_end
+    return acc, budget_end, all_ensemble_pred
 
 
 def pool_inference(model_pool, obj):
@@ -157,7 +159,7 @@ def training_on_budget(model_pool, prediction_threshold, budget, obj, target, su
         #     print('predictions = ', predictions)
         #     print('target = ', target)
         #     print('poisson_lambda = ', poisson_lambda)
-        # model_pool = retrain(model_pool, obj, label, poisson_lambda)
+        model_pool = retrain(model_pool, obj, label, poisson_lambda)
     return model_pool, budget
 
 

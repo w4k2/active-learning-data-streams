@@ -2,6 +2,8 @@ import numpy as np
 import numpy as np
 from sklearn.base import clone
 from strlearn.ensembles.base import StreamingEnsemble
+from strlearn.streams import StreamGenerator
+from sklearn.model_selection import train_test_split
 
 
 class OnlineBagging(StreamingEnsemble):
@@ -42,6 +44,23 @@ class OnlineBagging(StreamingEnsemble):
         self.was_trained = True
 
         return self
+
+
+def get_data(stream_len, seed_percentage):
+    stream = StreamGenerator(
+        n_chunks=stream_len,
+        chunk_size=1,
+        n_drifts=0,
+        random_state=2042,
+    )
+
+    seed_data, seed_target, stream = select_seed(stream, seed_percentage)
+    train_stream, eval_stream = train_test_split(stream, random_state=42)
+
+    test_X, test_y = zip(*eval_stream)
+    test_X = np.squeeze(test_X)
+
+    return seed_data, seed_target, train_stream, test_X, test_y
 
 
 def select_seed(stream, seed_percentage):
