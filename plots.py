@@ -34,10 +34,9 @@ def plot_model(model_name, args):
 
         if result_label == 'ours':
             classifier_preds = np.load(filepath.format('all_ensemble_pred', model_name, args.stream_len, args.seed_percentage, args.budget))
+            print(classifier_preds.shape)
             diversity = utils.diversity.cumulative_q_statistic(classifier_preds, targets)
 
-        # acc = acc[50:]
-        # budget_end -= 50
         plt.plot(acc, color=f"C{i}", label=result_label)
         if budget_end > -1:
             plt.axvline(x=budget_end, color=f"C{i}", linestyle="--")

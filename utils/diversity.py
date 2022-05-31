@@ -2,23 +2,25 @@ import numpy as np
 
 
 def cumulative_q_statistic(classifier_preds, targets):
+    print('classifier_preds shape = ', classifier_preds.shape)
+    print('targets shape = ', targets.shape)
     result = []
     for i in range(1, classifier_preds.shape[0]):
-        result.append(q_statistic(classifier_preds[:i], targets[:i]))
+        result.append(q_statistic(classifier_preds[i], targets))
     return result
 
 
 def q_statistic(classifier_preds, targets):
-    num_samples = classifier_preds.shape[0]
-    num_classifiers = classifier_preds.shape[1]
+    num_classifiers = classifier_preds.shape[0]
+    num_samples = classifier_preds.shape[1]
     assert len(targets) == num_samples
 
     pairwise_Q_stats = []
 
     for i in range(num_classifiers):
         for j in range(i+1, num_classifiers):
-            first_classifier_preds = classifier_preds[:, i]
-            second_classifier_preds = classifier_preds[:, j]
+            first_classifier_preds = classifier_preds[i, :]
+            second_classifier_preds = classifier_preds[j, :]
 
             targets = np.reshape(targets, newshape=first_classifier_preds.shape)
             first_correct_preds = first_classifier_preds == targets

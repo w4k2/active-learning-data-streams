@@ -3,36 +3,10 @@ import os
 import numpy as np
 
 import utils.utils
+import utils.ensemble
+
 from sklearn.metrics import accuracy_score
-from main import get_base_model, get_model_dataset
-
-
-class Ensemble:
-    def __init__(self, models, diversify=False) -> None:
-        self.models = models
-        self.diversify = diversify
-
-    def fit(self, data, target):
-        for model in self.models:
-            if self.diversify:
-                train_data, train_target = get_model_dataset(data, target)
-                model.fit(train_data, train_target)
-            else:
-                model.fit(data, target)
-
-    def predict(self, data):
-        predictions = []
-        for model in self.models:
-            pred = model.predict_proba(data)
-            predictions.append(pred)
-        predictions = np.stack(predictions, axis=0)
-        pred_avrg = np.mean(predictions, axis=0)
-        pred_label = np.argmax(pred_avrg, axis=-1)
-        return pred_label
-
-    def partial_fit(self, data, target):
-        for model in self.models:
-            model.partial_fit(data, target)
+from main import get_base_model
 
 
 def main():
@@ -40,7 +14,7 @@ def main():
 
     seed_data, seed_target, train_stream, test_X, test_y = utils.utils.get_data(args.stream_len, args.seed_percentage)
     if args.ensemble:
-        model = Ensemble([get_base_model(args.base_model) for _ in range(5)], diversify=args.ensemble_diversify)
+        model = utils.ensemble.Ensemble([get_base_model(args.base_model) for _ in range(args.num_classifiers)], diversify=args.ensemble_diversify)
     else:
         model = get_base_model(args.base_model)
     model.fit(seed_data, seed_target)
@@ -67,6 +41,8 @@ def parse_args():
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
     parser.add_argument('--ensemble', action='store_true')
     parser.add_argument('--ensemble_diversify', action='store_true')
+    parser.add_argument('--num_classifiers', type=int, default=9)
+
 
     args = parser.parse_args()
     return args
