@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from baselines import parse_args
+
 import utils.diversity
+from main import parse_args
 
 
 def main():
