@@ -1,6 +1,7 @@
 import argparse
 import math
 import os
+import tqdm
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,6 +11,7 @@ from sklearn.neural_network import MLPClassifier
 
 import utils.ensemble
 import utils.utils
+import utils.diversity
 from utils.utils import OnlineBagging
 
 
@@ -28,8 +30,8 @@ def main():
         model = get_base_model(args.base_model)
     model.fit(seed_data, seed_target)
 
-    acc, budget_end, all_ensemble_pred = stream_learning_baseline(train_stream, test_X, test_y, model, args,
-                                                                  budget=args.budget, prediction_threshold=args.prediction_threshold)
+    acc, budget_end, all_ensemble_pred = stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model, args,
+                                                         budget=args.budget, prediction_threshold=args.prediction_threshold)
 
     os.makedirs(f'results/{args.method}', exist_ok=True)
     experiment_parameters = f'{args.base_model}_{args.stream_len}_seed_{args.seed_percentage}_budget_{args.budget}'
@@ -52,6 +54,7 @@ def parse_args():
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
     parser.add_argument('--ensemble_diversify', action='store_true')
     parser.add_argument('--num_classifiers', type=int, default=9)
+    parser.add_argument('--debug', action='store_true')
 
     args = parser.parse_args()
     return args
@@ -61,7 +64,7 @@ def get_base_model(model_name):
     if model_name == 'ng':
         model = GaussianNB()
     elif model_name == 'mlp':
-        model = MLPClassifier(learning_rate_init=0.008, max_iter=500)
+        model = MLPClassifier(learning_rate_init=0.008, max_iter=1000)
     elif model_name == 'online_bagging':
         model = OnlineBagging(base_estimator=MLPClassifier(learning_rate_init=0.01, max_iter=500), n_estimators=5)
     else:
@@ -69,10 +72,13 @@ def get_base_model(model_name):
     return model
 
 
-def stream_learning_baseline(train_stream, test_X, test_y, model, args, budget=100, prediction_threshold=0.5):
+def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model, args, budget=100, prediction_threshold=0.5):
     all_ensemble_pred = []
     acc = []
     budget_end = -1
+
+    if not args.debug:
+        train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
 
     for i, (obj, target) in enumerate(train_stream):
         if args.method == 'ours':
@@ -87,22 +93,46 @@ def stream_learning_baseline(train_stream, test_X, test_y, model, args, budget=1
                     confident_supports.append(max_supp)
                     confident_preds.append(pred)
 
-            if len(confident_supports) > 0 and all(pred == confident_preds[0] for pred in confident_preds):
-                max_supp = max(confident_supports)
-                poisson_lambda = max_supp / prediction_threshold
-                label = confident_preds[0]
-                label = np.expand_dims(label, 0)
-                # if i < 1500:
-                model.partial_fit(obj, label, poisson_lambda)
-                # if label != target:
-                #     print('training with wrong target')
-                #     print('max_support = ', supports)
-                #     print('predictions = ', predictions)
-                #     print('target = ', target)
-                #     print('poisson_lambda = ', poisson_lambda)
+            if len(confident_supports) > 0:
+                if all(pred == confident_preds[0] for pred in confident_preds):
+                    max_supp = max(confident_supports)
+                    poisson_lambda = max_supp / prediction_threshold
+                    label = confident_preds[0]
+                    label = np.expand_dims(label, 0)
+
+                    seed_supports = model.predict_proba_separate(seed_data)
+                    test_predictions = np.argmax(seed_supports, axis=2)
+                    q_stat = utils.diversity.q_statistic(test_predictions, seed_target)
+                    if budget > 0 or q_stat < 0.90:
+                        weights_before_update = model.models[0].coefs_[0]
+                        model.partial_fit(obj, label, poisson_lambda)
+                        weights_after_update = model.models[0].coefs_[0]
+
+                        # def get_weights_vector(weights_list):
+                        #     weights = []
+                        #     for model_weights in weights_list:
+                        #         for w in model_weights:
+                        #             weights.append(w.flatten())
+                        #     weights = np.concatenate(weights)
+                        #     return weights
+
+                    elif args.debug:
+                        print(f'skipping learning, q_stat = {q_stat}')
+
+                    if args.debug and label != target:
+                        print('training with wrong target - consistent confident supports')
+                        print('max_support = ', supports)
+                        print('predictions = ', predictions)
+                        print('target = ', target)
+                        print('poisson_lambda = ', poisson_lambda)
+                        print('\n\n')
+                else:
+                    budget = training_on_budget(model, prediction_threshold, budget, seed_data, seed_target, obj, target, supports, predictions, debug=args.debug)
+                    # pass
             else:
-                # if i < 1500:
-                budget = training_on_budget(model, prediction_threshold, budget, obj, target, supports, predictions)
+                # traning when there are no confident supports seem to be worse
+                # budget = training_on_budget(model, prediction_threshold, budget, seed_data, seed_target, obj, target, supports, predictions, debug=args.debug)
+                pass
         elif args.method == 'all_labeled' or args.method == 'all_labeled_ensemble':
             model.partial_fit(obj, target)
         elif args.method == 'confidence' and budget > 0:
@@ -128,23 +158,29 @@ def stream_learning_baseline(train_stream, test_X, test_y, model, args, budget=1
     return acc, budget_end, all_ensemble_pred
 
 
-def training_on_budget(model_pool, prediction_threshold, budget, obj, target, supports, predictions):
+def training_on_budget(model_pool, prediction_threshold, budget, seed_data, seed_target, obj, target, supports, predictions, debug=False):
     if budget > 0:
         model_pool.partial_fit(obj, target, poisson_lambda=1.0)
         budget -= 1
     else:
         idx = np.argmax([np.max(s) for s in supports])
-        max_supp = np.max(supports[idx])
         label = predictions[idx]
         label = np.expand_dims(label, 0)
+        max_supp = np.max(supports[idx])
         poisson_lambda = abs(prediction_threshold - max_supp) / prediction_threshold
-        # if label != target:
-        #     print('training with wrong target')
-        #     print('max_support = ', supports)
-        #     print('predictions = ', predictions)
-        #     print('target = ', target)
-        #     print('poisson_lambda = ', poisson_lambda)
-        model_pool.partial_fit(obj, label, poisson_lambda)
+        if debug and label != target:
+            print('\ntraining with wrong target - incosistant or unconfident labels')
+            print('max_support = ', supports)
+            print('predictions = ', predictions)
+            print('target = ', target)
+            print('poisson_lambda = ', poisson_lambda)
+        seed_supports = model_pool.predict_proba_separate(seed_data)
+        test_predictions = np.argmax(seed_supports, axis=2)
+        q_stat = utils.diversity.q_statistic(test_predictions, seed_target)
+        if budget > 0 or q_stat < 0.95:
+            model_pool.partial_fit(obj, label, poisson_lambda)
+        elif debug:
+            print(f'skipping learning, q_stat = {q_stat}')
     return budget
 
 

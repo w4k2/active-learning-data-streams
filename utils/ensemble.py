@@ -54,8 +54,8 @@ class Ensemble:
         for model in self.models:
             if self.diversify:
                 num_repeats = np.random.poisson(lam=poisson_lambda)
+                target = np.ravel(target)
                 for _ in range(num_repeats):
-                    target = np.ravel(target)
                     model.partial_fit(data, target)
             else:
                 model.partial_fit(data, target)
