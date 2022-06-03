@@ -10,6 +10,7 @@ dependencies:
   - tqdm
   - pandas
   - autopep8
+  - pytorch
   - pip:
     - stream-learn
     - imbalanced-learn

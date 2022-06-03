@@ -60,12 +60,12 @@ def get_data(stream_len, seed_size):
     )
 
     seed_data, seed_target, stream = select_seed(stream, seed_size)
-    train_stream, eval_stream = train_test_split(stream, random_state=42)
+    data, target = zip(*stream)
+    X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=0.25, random_state=42, stratify=target)
+    train_stream = list(zip(X_train, y_train))
+    X_test = np.squeeze(X_test)
 
-    test_X, test_y = zip(*eval_stream)
-    test_X = np.squeeze(test_X)
-
-    return seed_data, seed_target, train_stream, test_X, test_y
+    return seed_data, seed_target, train_stream, X_test, y_test
 
 
 def select_seed(stream, seed_size):

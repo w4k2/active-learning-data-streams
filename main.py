@@ -12,6 +12,7 @@ from sklearn.neural_network import MLPClassifier
 import utils.ensemble
 import utils.utils
 import utils.diversity
+import utils.mlp_pytorch
 from utils.utils import OnlineBagging
 
 
@@ -64,7 +65,8 @@ def get_base_model(model_name):
     if model_name == 'ng':
         model = GaussianNB()
     elif model_name == 'mlp':
-        model = MLPClassifier(learning_rate_init=0.008, max_iter=1000)
+        # model = MLPClassifier(learning_rate_init=0.008, max_iter=1000)
+        model = utils.mlp_pytorch.MLPClassifierPytorch(learning_rate_init=0.001, max_iter=500)
     elif model_name == 'online_bagging':
         model = OnlineBagging(base_estimator=MLPClassifier(learning_rate_init=0.01, max_iter=500), n_estimators=5)
     else:
@@ -104,11 +106,11 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                     test_predictions = np.argmax(seed_supports, axis=2)
                     q_stat = utils.diversity.q_statistic(test_predictions, seed_target)
                     if budget > 0 or q_stat < 0.90:
-                        weights_before_update = model.models[0].coefs_[0]
+                        # weights_before_update = model.models[0].coefs_[0]
                         # weights_before_update = model.models[0].get_params()
                         model.partial_fit(obj, label, poisson_lambda)
                         # model.fit(obj, label)
-                        weights_after_update = model.models[0].coefs_[0]
+                        # weights_after_update = model.models[0].coefs_[0]
 
                         # print(weights_before_update)
                         # print(weights_after_update)
