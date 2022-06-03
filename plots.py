@@ -28,20 +28,20 @@ def plot_model(model_name, args):
     plt.subplot(3, 1, 1)
 
     for i, (filepath, result_label) in enumerate(zip(results, plot_labels)):
-        acc = np.load(filepath.format('acc', model_name, args.stream_len, args.seed_percentage, args.budget))
-        budget_end = np.load(filepath.format('budget_end', model_name, args.stream_len, args.seed_percentage, args.budget))
+        acc = np.load(filepath.format('acc', model_name, args.stream_len, args.seed_size, args.budget))
+        budget_end = np.load(filepath.format('budget_end', model_name, args.stream_len, args.seed_size, args.budget))
         print('budget_end = ', budget_end)
 
         if result_label == 'ours':
-            classifier_preds = np.load(filepath.format('all_ensemble_pred', model_name, args.stream_len, args.seed_percentage, args.budget))
-            targets = np.load(filepath.format('targets', model_name, args.stream_len, args.seed_percentage, args.budget))
+            classifier_preds = np.load(filepath.format('all_ensemble_pred', model_name, args.stream_len, args.seed_size, args.budget))
+            targets = np.load(filepath.format('targets', model_name, args.stream_len, args.seed_size, args.budget))
             diversity = utils.diversity.q_statistic_sequence(classifier_preds, targets)
             diversity_unsupervised = utils.diversity.q_statistic_sequence(classifier_preds, targets, unsupervised=True)
 
         plt.plot(acc, color=f"C{i}", label=result_label)
         if budget_end > -1:
             plt.axvline(x=budget_end, color=f"C{i}", linestyle="--")
-        plt.title(f'{model_name} strlen {args.stream_len} seed percentage {args.seed_percentage} budget {args.budget}')
+        plt.title(f'{model_name} strlen {args.stream_len} seed size {args.seed_size} budget {args.budget}')
         plt.xlabel('samples')
         plt.ylabel('Accuracy')
 

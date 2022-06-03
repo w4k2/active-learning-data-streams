@@ -46,7 +46,7 @@ class OnlineBagging(StreamingEnsemble):
         return self
 
 
-def get_data(stream_len, seed_percentage):
+def get_data(stream_len, seed_size):
     stream = StreamGenerator(
         n_chunks=stream_len,
         chunk_size=1,
@@ -59,7 +59,7 @@ def get_data(stream_len, seed_percentage):
         n_redundant=0,
     )
 
-    seed_data, seed_target, stream = select_seed(stream, seed_percentage)
+    seed_data, seed_target, stream = select_seed(stream, seed_size)
     train_stream, eval_stream = train_test_split(stream, random_state=42)
 
     test_X, test_y = zip(*eval_stream)
@@ -68,9 +68,7 @@ def get_data(stream_len, seed_percentage):
     return seed_data, seed_target, train_stream, test_X, test_y
 
 
-def select_seed(stream, seed_percentage):
-    seed_size = int(stream.n_chunks * seed_percentage)
-
+def select_seed(stream, seed_size):
     data = []
     target = []
     new_stream = []

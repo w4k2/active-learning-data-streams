@@ -19,7 +19,7 @@ def main():
     np.random.seed(42)
     args = parse_args()
 
-    seed_data, seed_target, train_stream, test_X, test_y = utils.utils.get_data(args.stream_len, args.seed_percentage)
+    seed_data, seed_target, train_stream, test_X, test_y = utils.utils.get_data(args.stream_len, args.seed_size)
     if args.method == 'all_labeled_ensemble':
         models = [get_base_model(args.base_model) for _ in range(args.num_classifiers)]
         model = utils.ensemble.Ensemble(models, diversify=args.ensemble_diversify)
@@ -34,7 +34,7 @@ def main():
                                                          budget=args.budget, prediction_threshold=args.prediction_threshold)
 
     os.makedirs(f'results/{args.method}', exist_ok=True)
-    experiment_parameters = f'{args.base_model}_{args.stream_len}_seed_{args.seed_percentage}_budget_{args.budget}'
+    experiment_parameters = f'{args.base_model}_{args.stream_len}_seed_{args.seed_size}_budget_{args.budget}'
     np.save(f'results/{args.method}/acc_{experiment_parameters}.npy', acc)
     np.save(f'results/{args.method}/budget_end_{experiment_parameters}.npy', budget_end)
 
@@ -47,7 +47,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--stream_len', type=int, default=5000)
-    parser.add_argument('--seed_percentage', type=float, default=0.1)
+    parser.add_argument('--seed_size', type=int, default=200)
     parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--budget', type=int, default=100)
     parser.add_argument('--method', choices=('ours', 'all_labeled', 'all_labeled_ensemble', 'confidence'), default='ours')
@@ -105,8 +105,14 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                     q_stat = utils.diversity.q_statistic(test_predictions, seed_target)
                     if budget > 0 or q_stat < 0.90:
                         weights_before_update = model.models[0].coefs_[0]
+                        # weights_before_update = model.models[0].get_params()
                         model.partial_fit(obj, label, poisson_lambda)
+                        # model.fit(obj, label)
                         weights_after_update = model.models[0].coefs_[0]
+
+                        # print(weights_before_update)
+                        # print(weights_after_update)
+                        # exit()
 
                         # def get_weights_vector(weights_list):
                         #     weights = []
