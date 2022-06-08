@@ -98,49 +98,43 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
             if len(confident_supports) > 0:
                 if all(pred == confident_preds[0] for pred in confident_preds):
                     max_supp = max(confident_supports)
-                    poisson_lambda = max_supp / prediction_threshold
+                    if budget > 0:
+                        poisson_lambda = max_supp / prediction_threshold
+                    else:
+                        poisson_lambda = abs(prediction_threshold - max_supp) / prediction_threshold
                     label = confident_preds[0]
                     label = np.expand_dims(label, 0)
 
-                    seed_supports = model.predict_proba_separate(seed_data)
-                    test_predictions = np.argmax(seed_supports, axis=2)
-                    q_stat = utils.diversity.q_statistic(test_predictions, seed_target)
-                    if budget > 0 or q_stat < 0.90:
-                        # weights_before_update = model.models[0].coefs_[0]
-                        # weights_before_update = model.models[0].get_params()
-                        model.partial_fit(obj, label, poisson_lambda)
-                        # model.fit(obj, label)
-                        # weights_after_update = model.models[0].coefs_[0]
-
-                        # print(weights_before_update)
-                        # print(weights_after_update)
-                        # exit()
-
-                        # def get_weights_vector(weights_list):
-                        #     weights = []
-                        #     for model_weights in weights_list:
-                        #         for w in model_weights:
-                        #             weights.append(w.flatten())
-                        #     weights = np.concatenate(weights)
-                        #     return weights
-
-                    elif args.debug:
-                        print(f'skipping learning, q_stat = {q_stat}')
+                    model.partial_fit(obj, label, poisson_lambda)
 
                     if args.debug and label != target:
-                        print('training with wrong target - consistent confident supports')
+                        print(f'sample {i} training with wrong target - consistent confident supports')
                         print('max_support = ', supports)
                         print('predictions = ', predictions)
                         print('target = ', target)
                         print('poisson_lambda = ', poisson_lambda)
                         print('\n\n')
                 else:
-                    budget = training_on_budget(model, prediction_threshold, budget, seed_data, seed_target, obj, target, supports, predictions, debug=args.debug)
-                    # pass
+                    if budget > 0:
+                        most_confident_idx = np.argmax([np.max(supp) for supp in supports])
+                        most_confident_pred = predictions[most_confident_idx]
+                        min_supp = np.min(supports[:, :, most_confident_pred])
+
+                        poisson_lambda = max_supp / min_supp
+                        model.partial_fit(obj, target, poisson_lambda=poisson_lambda)
+                        budget -= 1
+                    else:
+                        # train_unconfident(model, prediction_threshold, obj, target, supports, predictions, debug=args.debug)
+                        pass
             else:
                 # traning when there are no confident supports seem to be worse
-                # budget = training_on_budget(model, prediction_threshold, budget, seed_data, seed_target, obj, target, supports, predictions, debug=args.debug)
-                pass
+                if budget > 0:
+                    poisson_lambda = prediction_threshold / max_supp
+                    model.partial_fit(obj, target, poisson_lambda=poisson_lambda)
+                    budget -= 1
+                else:
+                    # train_unconfident(model, prediction_threshold, obj, target, supports, predictions, debug=args.debug)
+                    pass
         elif args.method == 'all_labeled' or args.method == 'all_labeled_ensemble':
             model.partial_fit(obj, target)
         elif args.method == 'confidence' and budget > 0:
@@ -166,30 +160,19 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
     return acc, budget_end, all_ensemble_pred
 
 
-def training_on_budget(model_pool, prediction_threshold, budget, seed_data, seed_target, obj, target, supports, predictions, debug=False):
-    if budget > 0:
-        model_pool.partial_fit(obj, target, poisson_lambda=1.0)
-        budget -= 1
-    else:
-        idx = np.argmax([np.max(s) for s in supports])
-        label = predictions[idx]
-        label = np.expand_dims(label, 0)
-        max_supp = np.max(supports[idx])
-        poisson_lambda = abs(prediction_threshold - max_supp) / prediction_threshold
-        if debug and label != target:
-            print('\ntraining with wrong target - incosistant or unconfident labels')
-            print('max_support = ', supports)
-            print('predictions = ', predictions)
-            print('target = ', target)
-            print('poisson_lambda = ', poisson_lambda)
-        seed_supports = model_pool.predict_proba_separate(seed_data)
-        test_predictions = np.argmax(seed_supports, axis=2)
-        q_stat = utils.diversity.q_statistic(test_predictions, seed_target)
-        if budget > 0 or q_stat < 0.95:
-            model_pool.partial_fit(obj, label, poisson_lambda)
-        elif debug:
-            print(f'skipping learning, q_stat = {q_stat}')
-    return budget
+def train_unconfident(model, prediction_threshold, obj, target, supports, predictions, debug=False):
+    idx = np.argmax([np.max(s) for s in supports])
+    label = predictions[idx]
+    label = np.expand_dims(label, 0)
+    max_supp = np.max(supports[idx])
+    poisson_lambda = abs(prediction_threshold - max_supp) / prediction_threshold
+    if debug and label != target:
+        print('\ntraining with wrong target - incosistant or unconfident labels')
+        print('max_support = ', supports)
+        print('predictions = ', predictions)
+        print('target = ', target)
+        print('poisson_lambda = ', poisson_lambda)
+    model.partial_fit(obj, label, poisson_lambda)
 
 
 def plot_confidence(pool, data, target):

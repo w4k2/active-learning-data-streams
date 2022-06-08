@@ -4,6 +4,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import functools
 import numpy as np
+import collections
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 
@@ -14,13 +15,11 @@ class MLPModule(nn.Module):
         for i in range(len(hidden_layer_sizes)-1):
             layers_list.append(nn.Linear(hidden_layer_sizes[i], hidden_layer_sizes[i+1])),
             layers_list.append(activation())
-        hidden_layers = nn.Sequential(*layers_list)
-        self.layers = nn.Sequential(
-            nn.Linear(num_features, hidden_layer_sizes[0]),
-            activation(),
-            hidden_layers,
-            nn.Linear(hidden_layer_sizes[-1], num_outputs)
-        )
+
+        layers_list.insert(0, nn.Linear(num_features, hidden_layer_sizes[0]))
+        layers_list.insert(1, activation())
+        layers_list.append(nn.Linear(hidden_layer_sizes[-1], num_outputs))
+        self.layers = nn.Sequential(*layers_list)
 
     def forward(self, x):
         x = self.layers(x)
