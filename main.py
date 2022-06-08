@@ -66,7 +66,7 @@ def get_base_model(model_name):
         model = GaussianNB()
     elif model_name == 'mlp':
         # model = MLPClassifier(learning_rate_init=0.008, max_iter=1000)
-        model = utils.mlp_pytorch.MLPClassifierPytorch(learning_rate_init=0.001, max_iter=500)
+        model = utils.mlp_pytorch.MLPClassifierPytorch(learning_rate_init=0.001, max_iter=500, beta_1=0.99999999)
     elif model_name == 'online_bagging':
         model = OnlineBagging(base_estimator=MLPClassifier(learning_rate_init=0.01, max_iter=500), n_estimators=5)
     else:
@@ -84,6 +84,10 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
 
     for i, (obj, target) in enumerate(train_stream):
         if args.method == 'ours':
+            # if i == 400:
+            #     preds = model.predict(test_X)
+            #     print('preds count: ', np.unique(preds, return_counts=True))
+
             supports = model.predict_proba_separate(obj)
             predictions = np.argmax(supports, axis=2)
 
@@ -121,19 +125,21 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                         min_supp = np.min(supports[:, :, most_confident_pred])
 
                         poisson_lambda = max_supp / min_supp
+                        # poisson_lambda = max_supp / prediction_threshold
                         model.partial_fit(obj, target, poisson_lambda=poisson_lambda)
                         budget -= 1
                     else:
-                        # train_unconfident(model, prediction_threshold, obj, target, supports, predictions, debug=args.debug)
+                        train_unconfident(model, prediction_threshold, obj, target, supports, predictions, debug=args.debug)
                         pass
             else:
                 # traning when there are no confident supports seem to be worse
                 if budget > 0:
                     poisson_lambda = prediction_threshold / max_supp
+                    # poisson_lambda = max_supp / prediction_threshold
                     model.partial_fit(obj, target, poisson_lambda=poisson_lambda)
                     budget -= 1
                 else:
-                    # train_unconfident(model, prediction_threshold, obj, target, supports, predictions, debug=args.debug)
+                    train_unconfident(model, prediction_threshold, obj, target, supports, predictions, debug=args.debug)
                     pass
         elif args.method == 'all_labeled' or args.method == 'all_labeled_ensemble':
             model.partial_fit(obj, target)
@@ -155,6 +161,9 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
             test_supports = model.predict_proba_separate(test_X)
             test_predictions = np.argmax(test_supports, axis=2)
             all_ensemble_pred.append(test_predictions)
+
+    # preds = model.predict(test_X)
+    # print('preds count: ', np.unique(preds, return_counts=True))
 
     print(f'budget after training = {budget}')
     return acc, budget_end, all_ensemble_pred

@@ -187,5 +187,9 @@ class MLPClassifierPytorch(BaseEstimator, ClassifierMixin):
 
     def _get_optimizer(self):
         if self.solver == 'adam':
-            return optim.Adam(self.model.parameters(), self.learning_rate_init, betas=(self.beta_1, self.beta_2), eps=self.epsilon, weight_decay=self.alpha)
+            return optim.Adam(self.model.parameters(), self.learning_rate_init, betas=(self.beta_1, self.beta_2),
+                              eps=self.epsilon, weight_decay=self.alpha)
+        elif self.solver == 'sgd':
+            return optim.SGD(self.model.parameters(), lr=self.learning_rate_init, momentum=self.momentum,
+                             weight_decay=self.alpha, nesterov=self.nesterovs_momentum)
         raise ValueError('Invalid solver')
