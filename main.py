@@ -1,3 +1,4 @@
+import collections
 import argparse
 import math
 import os
@@ -82,11 +83,16 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
     if not args.debug:
         train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
 
+    _, counts = np.unique(seed_target, return_counts=True)
+    class_priors = counts / seed_target.shape[0]
+    last_predictions = collections.deque([], maxlen=100)
+    bernouli = True
+
     for i, (obj, target) in enumerate(train_stream):
         if args.method == 'ours':
-            # if i == 400:
-            #     preds = model.predict(test_X)
-            #     print('preds count: ', np.unique(preds, return_counts=True))
+            if i == 400:
+                preds = model.predict(test_X)
+                print('preds count: ', np.unique(preds, return_counts=True))
 
             supports = model.predict_proba_separate(obj)
             predictions = np.argmax(supports, axis=2)
@@ -109,7 +115,18 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                     label = confident_preds[0]
                     label = np.expand_dims(label, 0)
 
-                    model.partial_fit(obj, label, poisson_lambda)
+                    if len(last_predictions) == last_predictions.maxlen:
+                        _, current_dist = np.unique(list(last_predictions), return_counts=True)
+                        current_dist = current_dist / len(last_predictions)
+                        delta_p = class_priors[label] - current_dist[label]
+                        p_b = 0.5 * (delta_p + 1)
+                        bernouli = np.random.binomial(1, p_b)
+                        # print(bernouli)
+                        # exit()
+
+                    if bernouli:
+                        model.partial_fit(obj, label, poisson_lambda)
+                        last_predictions.append(label)
 
                     if args.debug and label != target:
                         print(f'sample {i} training with wrong target - consistent confident supports')
@@ -124,23 +141,25 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                         most_confident_pred = predictions[most_confident_idx]
                         min_supp = np.min(supports[:, :, most_confident_pred])
 
-                        poisson_lambda = max_supp / min_supp
-                        # poisson_lambda = max_supp / prediction_threshold
+                        # poisson_lambda = max_supp / min_supp
+                        poisson_lambda = max_supp / prediction_threshold
                         model.partial_fit(obj, target, poisson_lambda=poisson_lambda)
+                        last_predictions.append(label)
                         budget -= 1
                     else:
                         train_unconfident(model, prediction_threshold, obj, target, supports, predictions, debug=args.debug)
-                        pass
+                        # pass
             else:
                 # traning when there are no confident supports seem to be worse
                 if budget > 0:
-                    poisson_lambda = prediction_threshold / max_supp
-                    # poisson_lambda = max_supp / prediction_threshold
+                    # poisson_lambda = prediction_threshold / max_supp
+                    poisson_lambda = max_supp / prediction_threshold
                     model.partial_fit(obj, target, poisson_lambda=poisson_lambda)
+                    last_predictions.append(label)
                     budget -= 1
                 else:
                     train_unconfident(model, prediction_threshold, obj, target, supports, predictions, debug=args.debug)
-                    pass
+                    # pass
         elif args.method == 'all_labeled' or args.method == 'all_labeled_ensemble':
             model.partial_fit(obj, target)
         elif args.method == 'confidence' and budget > 0:
@@ -162,8 +181,8 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
             test_predictions = np.argmax(test_supports, axis=2)
             all_ensemble_pred.append(test_predictions)
 
-    # preds = model.predict(test_X)
-    # print('preds count: ', np.unique(preds, return_counts=True))
+    preds = model.predict(test_X)
+    print('preds count: ', np.unique(preds, return_counts=True))
 
     print(f'budget after training = {budget}')
     return acc, budget_end, all_ensemble_pred

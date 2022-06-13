@@ -54,7 +54,7 @@ class Ensemble:
         for model in self.models:
             if self.diversify:
                 num_repeats = np.random.poisson(lam=poisson_lambda)
-                num_repeats = min(num_repeats, 4)  # TODO should we realy use this?
+                # num_repeats = min(num_repeats, 4)  # TODO should we realy use this?
                 target = np.ravel(target)
                 for _ in range(num_repeats):
                     model.partial_fit(data, target)
