@@ -23,13 +23,13 @@ def main():
 
     seed_data, seed_target, train_stream, test_X, test_y = utils.utils.get_data(args.stream_len, args.seed_size)
     if args.method == 'all_labeled_ensemble':
-        models = [get_base_model(args.base_model) for _ in range(args.num_classifiers)]
+        models = [get_base_model(args) for _ in range(args.num_classifiers)]
         model = utils.ensemble.Ensemble(models, diversify=args.ensemble_diversify)
     elif args.method == 'ours':
-        models = [get_base_model(args.base_model) for _ in range(args.num_classifiers)]
+        models = [get_base_model(args) for _ in range(args.num_classifiers)]
         model = utils.ensemble.Ensemble(models, diversify=True)
     else:
-        model = get_base_model(args.base_model)
+        model = get_base_model(args)
     model.fit(seed_data, seed_target)
 
     acc, budget_end, all_ensemble_pred = stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model, args,
@@ -58,17 +58,19 @@ def parse_args():
     parser.add_argument('--num_classifiers', type=int, default=9)
     parser.add_argument('--debug', action='store_true')
 
+    parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for Adam optimizer')
+
     args = parser.parse_args()
     return args
 
 
-def get_base_model(model_name):
-    if model_name == 'ng':
+def get_base_model(args):
+    if args.base_model == 'ng':
         model = GaussianNB()
-    elif model_name == 'mlp':
+    elif args.base_model == 'mlp':
         # model = MLPClassifier(learning_rate_init=0.008, max_iter=1000)
-        model = utils.mlp_pytorch.MLPClassifierPytorch(learning_rate_init=0.001, max_iter=500, beta_1=0.99999999)
-    elif model_name == 'online_bagging':
+        model = utils.mlp_pytorch.MLPClassifierPytorch(learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
+    elif args.base_model == 'online_bagging':
         model = OnlineBagging(base_estimator=MLPClassifier(learning_rate_init=0.01, max_iter=500), n_estimators=5)
     else:
         raise ValueError("Invalid base classifier")
@@ -91,7 +93,7 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
 
     for i, (obj, target) in enumerate(train_stream):
         if args.method == 'ours':
-            if i % 100 == 0:
+            if args.debug and i % 100 == 0:
                 preds = model.predict(test_X)
                 print('preds count: ', np.unique(preds, return_counts=True))
 
