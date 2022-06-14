@@ -80,17 +80,18 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
     acc = []
     budget_end = -1
 
+    print('test y counts = ', np.unique(test_y, return_counts=True))
+
     if not args.debug:
         train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
 
-    _, counts = np.unique(seed_target, return_counts=True)
-    class_priors = counts / seed_target.shape[0]
-    last_predictions = collections.deque([], maxlen=100)
-    bernouli = True
+    num_classes = np.unique(test_y).size
+    last_predictions = collections.deque([], maxlen=200)
+    train_with_selflabeling = True
 
     for i, (obj, target) in enumerate(train_stream):
         if args.method == 'ours':
-            if i == 400:
+            if i % 100 == 0:
                 preds = model.predict(test_X)
                 print('preds count: ', np.unique(preds, return_counts=True))
 
@@ -118,13 +119,15 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                     if len(last_predictions) == last_predictions.maxlen:
                         _, current_dist = np.unique(list(last_predictions), return_counts=True)
                         current_dist = current_dist / len(last_predictions)
-                        delta_p = class_priors[label] - current_dist[label]
-                        p_b = 0.5 * (delta_p + 1)
-                        bernouli = np.random.binomial(1, p_b)
-                        # print(bernouli)
-                        # exit()
+                        delta_p = current_dist[label] - (1.0 / num_classes)
+                        if delta_p <= 0:
+                            train_with_selflabeling = True
+                        else:
+                            train_with_selflabeling = False
+                            if args.debug:
+                                print(f'label = {label}, current_dist = {current_dist} delta_p = {delta_p}')
 
-                    if bernouli:
+                    if train_with_selflabeling:
                         model.partial_fit(obj, label, poisson_lambda)
                         last_predictions.append(label)
 
@@ -147,8 +150,8 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                         last_predictions.append(label)
                         budget -= 1
                     else:
-                        train_unconfident(model, prediction_threshold, obj, target, supports, predictions, debug=args.debug)
-                        # pass
+                        # train_unconfident(model, prediction_threshold, obj, target, supports, predictions, last_predictions, debug=args.debug)
+                        pass
             else:
                 # traning when there are no confident supports seem to be worse
                 if budget > 0:
@@ -158,8 +161,8 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                     last_predictions.append(label)
                     budget -= 1
                 else:
-                    train_unconfident(model, prediction_threshold, obj, target, supports, predictions, debug=args.debug)
-                    # pass
+                    # train_unconfident(model, prediction_threshold, obj, target, supports, predictions, last_predictions, debug=args.debug)
+                    pass
         elif args.method == 'all_labeled' or args.method == 'all_labeled_ensemble':
             model.partial_fit(obj, target)
         elif args.method == 'confidence' and budget > 0:
@@ -188,10 +191,11 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
     return acc, budget_end, all_ensemble_pred
 
 
-def train_unconfident(model, prediction_threshold, obj, target, supports, predictions, debug=False):
+def train_unconfident(model, prediction_threshold, obj, target, supports, predictions, last_predictions, debug=False):
     idx = np.argmax([np.max(s) for s in supports])
     label = predictions[idx]
     label = np.expand_dims(label, 0)
+    last_predictions.append(label)
     max_supp = np.max(supports[idx])
     poisson_lambda = abs(prediction_threshold - max_supp) / prediction_threshold
     if debug and label != target:

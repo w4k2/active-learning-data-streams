@@ -45,7 +45,7 @@ def plot_model(model_name, args):
         plt.xlabel('samples')
         plt.ylabel('Accuracy')
 
-    plt.legend()
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
     plt.subplot(3, 1, 2)
     plt.plot(diversity)
