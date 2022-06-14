@@ -48,7 +48,7 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--stream_len', type=int, default=5000)
+    parser.add_argument('--stream_len', type=int, default=10000)
     parser.add_argument('--seed_size', type=int, default=200)
     parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--budget', type=int, default=100)
@@ -88,7 +88,7 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
         train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
 
     num_classes = np.unique(test_y).size
-    last_predictions = collections.deque([], maxlen=200)
+    last_predictions = collections.deque([], maxlen=500)
     train_with_selflabeling = True
 
     for i, (obj, target) in enumerate(train_stream):
@@ -118,7 +118,7 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                     label = confident_preds[0]
                     label = np.expand_dims(label, 0)
 
-                    if len(last_predictions) == last_predictions.maxlen:
+                    if len(last_predictions) >= min(last_predictions.maxlen, 30):
                         _, current_dist = np.unique(list(last_predictions), return_counts=True)
                         current_dist = current_dist / len(last_predictions)
                         delta_p = current_dist[label] - (1.0 / num_classes)
@@ -127,11 +127,11 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                         else:
                             train_with_selflabeling = False
                             if args.debug:
-                                print(f'label = {label}, current_dist = {current_dist} delta_p = {delta_p}')
-
-                    if train_with_selflabeling:
+                                print(f'{i} label = {label}, current_dist = {current_dist} delta_p = {delta_p}')                        
+                    
+                    if train_with_selflabeling: # label == target and 
                         model.partial_fit(obj, label, poisson_lambda)
-                        last_predictions.append(label)
+                        last_predictions.append(int(label))
 
                     if args.debug and label != target:
                         print(f'sample {i} training with wrong target - consistent confident supports')
@@ -149,7 +149,7 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                         # poisson_lambda = max_supp / min_supp
                         poisson_lambda = max_supp / prediction_threshold
                         model.partial_fit(obj, target, poisson_lambda=poisson_lambda)
-                        last_predictions.append(label)
+                        last_predictions.append(int(target))
                         budget -= 1
                     else:
                         # train_unconfident(model, prediction_threshold, obj, target, supports, predictions, last_predictions, debug=args.debug)
@@ -160,7 +160,7 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                     # poisson_lambda = prediction_threshold / max_supp
                     poisson_lambda = max_supp / prediction_threshold
                     model.partial_fit(obj, target, poisson_lambda=poisson_lambda)
-                    last_predictions.append(label)
+                    last_predictions.append(int(target))
                     budget -= 1
                 else:
                     # train_unconfident(model, prediction_threshold, obj, target, supports, predictions, last_predictions, debug=args.debug)
@@ -197,7 +197,7 @@ def train_unconfident(model, prediction_threshold, obj, target, supports, predic
     idx = np.argmax([np.max(s) for s in supports])
     label = predictions[idx]
     label = np.expand_dims(label, 0)
-    last_predictions.append(label)
+    last_predictions.append(int(label))
     max_supp = np.max(supports[idx])
     poisson_lambda = abs(prediction_threshold - max_supp) / prediction_threshold
     if debug and label != target:
