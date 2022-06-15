@@ -1,3 +1,4 @@
+from sklearn.neighbors import NearestNeighbors
 import numpy as np
 
 
@@ -23,12 +24,16 @@ class Ensemble:
     def __init__(self, models, diversify=False):
         self.models = models
         self.diversify = diversify
+        self.seed_data = None
+        self.neighbors = NearestNeighbors(n_neighbors=5)
 
     def fit(self, data, target):
         for model in self.models:
             if self.diversify:
                 train_data, train_target = get_model_dataset(data, target)
                 model.fit(train_data, train_target)
+                self.seed_data = train_data
+                self.neighbors.fit(train_data)
             else:
                 model.fit(data, target)
 
@@ -54,9 +59,22 @@ class Ensemble:
         for model in self.models:
             if self.diversify:
                 num_repeats = np.random.poisson(lam=poisson_lambda)
-                # num_repeats = min(num_repeats, 4)  # TODO should we realy use this?
-                target = np.ravel(target)
-                for _ in range(num_repeats):
-                    model.partial_fit(data, target)
+                num_repeats = min(num_repeats, 4)  # TODO should we realy use this?
+                if num_repeats > 0:
+                    target = np.ravel(target)
+                    idx = self.neighbors.kneighbors(data, n_neighbors=num_repeats, return_distance=False)[0]
+                    nearest = self.seed_data[idx]
+                    for neighbor in nearest:
+                        sample = self._augument_sample(data, neighbor)
+                        model.partial_fit(sample, target)
+                        # model.partial_fit(data, target)
             else:
                 model.partial_fit(data, target)
+
+    def _augument_sample(self, sample, neighbor):
+        vec = neighbor - sample
+        norm = np.linalg.norm(vec)
+        vec_normalized = vec / norm
+        new_len = np.random.rand() * norm
+        new_sample = sample + vec_normalized * new_len
+        return new_sample

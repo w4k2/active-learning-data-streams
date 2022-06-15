@@ -15,7 +15,7 @@ def main():
 
 def plot_model(model_name, args):
     results = [
-        'results/ours/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/ours_new/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/all_labeled/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/all_labeled_ensemble/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/confidence/{}_{}_{}_seed_{}_budget_{}.npy',
@@ -32,11 +32,11 @@ def plot_model(model_name, args):
         budget_end = np.load(filepath.format('budget_end', model_name, args.stream_len, args.seed_size, args.budget))
         print('budget_end = ', budget_end)
 
-        if result_label == 'ours':
-            classifier_preds = np.load(filepath.format('all_ensemble_pred', model_name, args.stream_len, args.seed_size, args.budget))
-            targets = np.load(filepath.format('targets', model_name, args.stream_len, args.seed_size, args.budget))
-            diversity = utils.diversity.q_statistic_sequence(classifier_preds, targets)
-            diversity_unsupervised = utils.diversity.q_statistic_sequence(classifier_preds, targets, unsupervised=True)
+        # if result_label == 'ours':
+        #     classifier_preds = np.load(filepath.format('all_ensemble_pred', model_name, args.stream_len, args.seed_size, args.budget))
+        #     targets = np.load(filepath.format('targets', model_name, args.stream_len, args.seed_size, args.budget))
+        #     diversity = utils.diversity.q_statistic_sequence(classifier_preds, targets)
+        #     diversity_unsupervised = utils.diversity.q_statistic_sequence(classifier_preds, targets, unsupervised=True)
 
         plt.plot(acc, color=f"C{i}", label=result_label)
         if budget_end > -1:
@@ -47,15 +47,15 @@ def plot_model(model_name, args):
 
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
-    plt.subplot(3, 1, 2)
-    plt.plot(diversity)
-    plt.xlabel('samples')
-    plt.ylabel('Q statistic')
+    # plt.subplot(3, 1, 2)
+    # plt.plot(diversity)
+    # plt.xlabel('samples')
+    # plt.ylabel('Q statistic')
 
-    plt.subplot(3, 1, 3)
-    plt.plot(diversity_unsupervised)
-    plt.xlabel('samples')
-    plt.ylabel('Q statistic unsupervised')
+    # plt.subplot(3, 1, 3)
+    # plt.plot(diversity_unsupervised)
+    # plt.xlabel('samples')
+    # plt.ylabel('Q statistic unsupervised')
 
 
 if __name__ == '__main__':
