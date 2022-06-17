@@ -19,7 +19,7 @@ from utils.online_bagging import OnlineBagging
 
 
 def main():
-    # np.random.seed(42)
+    np.random.seed(42)
     args = parse_args()
 
     seed_data, seed_target, train_stream, test_X, test_y = utils.data.get_data(args.stream_len, args.seed_size, args.chunk_size, args.random_seed)
@@ -52,11 +52,11 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--stream_len', type=int, default=10000)
+    parser.add_argument('--stream_len', type=int, default=1000)
     parser.add_argument('--seed_size', type=int, default=200, help='seed size for model training')
     parser.add_argument('--chunk_size', type=int, default=100, help='chunk size in data generator')
     parser.add_argument('--random_seed', type=int, default=2042)
-    parser.add_argument('--budget', type=int, default=100)
+    parser.add_argument('--budget', type=int, default=1000)
 
     parser.add_argument('--method', choices=('ours', 'ours_new', 'all_labeled', 'all_labeled_ensemble', 'confidence'), default='ours')
     parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
@@ -92,80 +92,92 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
     print('test y counts = ', np.unique(test_y, return_counts=True))
 
     if not args.debug:
-        train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
+        stream_len = args.stream_len - len(seed_target) // args.chunk_size - len(test_y) // args.chunk_size
+        train_stream = tqdm.tqdm(train_stream, total=stream_len)
 
     num_classes = np.unique(test_y).size
     last_predictions = collections.deque([], maxlen=500)
     train_with_selflabeling = True
 
-    for i, (obj, target) in enumerate(train_stream):
+    for i, (chunk, chunk_target) in enumerate(train_stream):
         if args.method == 'ours':
             if args.debug and i % 100 == 0:
                 preds = model.predict(test_X)
                 print('preds count: ', np.unique(preds, return_counts=True))
 
-            supports = model.predict_proba_separate(obj)
-            predictions = np.argmax(supports, axis=2)
+            train_chunk = []
+            train_target = []
+            for obj, target in zip(chunk, chunk_target):
+                obj = np.expand_dims(obj, axis=0)
+                target = np.expand_dims(target, axis=0)
+                supports = model.predict_proba_separate(obj)
+                predictions = np.argmax(supports, axis=2)
 
-            confident_supports = []
-            confident_preds = []
-            for supp, pred in zip(supports, predictions):
-                if np.max(supp) > prediction_threshold:
-                    max_supp = np.max(supp)
-                    confident_supports.append(max_supp)
-                    confident_preds.append(pred)
+                confident_supports = []
+                confident_preds = []
+                for supp, pred in zip(supports, predictions):
+                    if np.max(supp) > prediction_threshold:
+                        max_supp = np.max(supp)
+                        confident_supports.append(max_supp)
+                        confident_preds.append(pred)
 
-            if len(confident_supports) > 0:
-                if all(pred == confident_preds[0] for pred in confident_preds):
-                    max_supp = max(confident_supports)
-                    if budget > 0:
-                        poisson_lambda = max_supp / prediction_threshold
-                    else:
-                        poisson_lambda = abs(prediction_threshold - max_supp) / prediction_threshold
-                    label = confident_preds[0]
-                    label = np.expand_dims(label, 0)
-
-                    if len(last_predictions) >= min(last_predictions.maxlen, 30):
-                        _, current_dist = np.unique(list(last_predictions), return_counts=True)
-                        current_dist = current_dist / len(last_predictions)
-                        delta_p = current_dist[label] - (1.0 / num_classes)
-                        if delta_p <= 0:
-                            train_with_selflabeling = True
+                if len(confident_supports) > 0:
+                    if all(pred == confident_preds[0] for pred in confident_preds):
+                        max_supp = max(confident_supports)
+                        if budget > 0:
+                            poisson_lambda = max_supp / prediction_threshold
                         else:
-                            train_with_selflabeling = False
-                            if args.debug:
-                                print(f'{i} label = {label}, current_dist = {current_dist} delta_p = {delta_p}')
+                            poisson_lambda = abs(prediction_threshold - max_supp) / prediction_threshold
+                        label = confident_preds[0]
+                        # label = np.expand_dims(label, 0)
 
-                    if train_with_selflabeling:  # label == target and
-                        model.partial_fit(obj, label, poisson_lambda=poisson_lambda)
-                        last_predictions.append(int(label))
+                        if len(last_predictions) >= min(last_predictions.maxlen, 30):
+                            _, current_dist = np.unique(list(last_predictions), return_counts=True)
+                            current_dist = current_dist / len(last_predictions)
+                            delta_p = current_dist[label] - (1.0 / num_classes)
+                            if delta_p <= 0:
+                                train_with_selflabeling = True
+                            else:
+                                train_with_selflabeling = False
+                                if args.debug:
+                                    print(f'{i} label = {label}, current_dist = {current_dist} delta_p = {delta_p}')
 
-                    if args.debug and label != target:
-                        print(f'sample {i} training with wrong target - consistent confident supports')
-                        print('max_support = ', supports)
-                        print('predictions = ', predictions)
-                        print('target = ', target)
-                        print('poisson_lambda = ', poisson_lambda)
-                        print('\n\n')
+                        if train_with_selflabeling:  # label == target and
+                            # model.partial_fit(obj, label, poisson_lambda=poisson_lambda)
+                            train_chunk.append(obj)
+                            train_target.append(label)
+                            last_predictions.append(int(label))
+
+                        if args.debug and label != target:
+                            print(f'sample {i} training with wrong target - consistent confident supports')
+                            print('max_support = ', supports)
+                            print('predictions = ', predictions)
+                            print('target = ', target)
+                            print('poisson_lambda = ', poisson_lambda)
+                            print('\n\n')
+                    else:
+                        if budget > 0:
+                            poisson_lambda = max_supp / prediction_threshold
+                            # model.partial_fit(obj, target, poisson_lambda=1.0)
+                            last_predictions.append(int(target))
+                            budget -= 1
+                            train_chunk.append(obj)
+                            train_target.append(target)
+
                 else:
                     if budget > 0:
                         poisson_lambda = max_supp / prediction_threshold
-                        model.partial_fit(obj, target, poisson_lambda=1.0)
+                        # model.partial_fit(obj, target, poisson_lambda=1.0)
                         last_predictions.append(int(target))
                         budget -= 1
-                    else:
-                        # train_unconfident(model, prediction_threshold, obj, target, supports, predictions, last_predictions, debug=args.debug)
-                        pass
-            else:
-                # traning when there are no confident supports seem to be worse
-                if budget > 0:
-                    poisson_lambda = max_supp / prediction_threshold
-                    model.partial_fit(obj, target, poisson_lambda=1.0)
-                    last_predictions.append(int(target))
-                    budget -= 1
-                else:
-                    # train_unconfident(model, prediction_threshold, obj, target, supports, predictions, last_predictions, debug=args.debug)
-                    pass
+
+                        train_chunk.append(obj)
+                        train_target.append(target)
+
+            train_chunk = np.concatenate(train_chunk, axis=0)
+            train_target = np.concatenate(train_target, axis=0)
+            model.partial_fit(train_chunk, train_target, poisson_lambda=1.0)
+
         elif args.method == 'ours_new':
             pred_prob = model.predict_proba(obj)
             max_prob = np.max(pred_prob, axis=1)[0]
@@ -189,13 +201,26 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                 last_predictions.append(int(target))
                 budget -= 1
         elif args.method in ('all_labeled', 'all_labeled_ensemble'):
-            model.partial_fit(obj, target)
+            model.partial_fit(chunk, chunk_target)
         elif args.method == 'confidence' and budget > 0:
-            pred_prob = model.predict_proba(obj)
-            max_prob = np.max(pred_prob, axis=1)[0]
-            if max_prob < prediction_threshold:
-                model.partial_fit(obj, target)
-                budget -= 1
+            train_chunk = []
+            train_target = []
+
+            for obj, target in zip(chunk, chunk_target):
+                obj = np.expand_dims(obj, axis=0)
+                target = np.expand_dims(target, axis=0)
+                pred_prob = model.predict_proba(obj)
+                max_prob = np.max(pred_prob, axis=1)[0]
+                if max_prob < prediction_threshold:
+                    # model.partial_fit(obj, target)
+                    train_chunk.append(obj)
+                    train_target.append(target)
+                    budget -= 1
+
+            if len(train_chunk) > 0:
+                train_chunk = np.concatenate(train_chunk, axis=0)
+                train_target = np.concatenate(train_target, axis=0)
+                model.partial_fit(train_chunk, train_target)
 
         if budget == 0:
             budget = -1

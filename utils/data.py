@@ -21,7 +21,11 @@ def get_data(stream_len, seed_size, chunk_size, random_seed):
     test_size = int(0.25 * stream_len * chunk_size)
     X_test, y_test, stream = select_from_seed(stream, test_size)
 
-    return seed_data, seed_target, stream, X_test, y_test
+    def iterable_stream_generator(datastream):
+        while not datastream.is_dry():
+            yield datastream.get_chunk()
+
+    return seed_data, seed_target, iterable_stream_generator(stream), X_test, y_test
 
 
 def select_from_seed(stream, seed_size):
