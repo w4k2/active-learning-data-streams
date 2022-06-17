@@ -9,7 +9,7 @@ def main():
     np.random.seed(42)
     args = parse_args()
 
-    _, _, train_stream, _, _ = utils.utils.get_data(args.stream_len, args.seed_size)
+    _, _, train_stream, _, _ = utils.utils.get_data(args.stream_len, args.seed_size, args.random_seed)
 
     stream_labels = list(zip(*train_stream))[1]
     stream_labels = np.array(stream_labels)

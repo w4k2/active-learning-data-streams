@@ -62,12 +62,12 @@ class Ensemble:
                 num_repeats = min(num_repeats, 4)  # TODO should we realy use this?
                 if num_repeats > 0:
                     target = np.ravel(target)
-                    idx = self.neighbors.kneighbors(data, n_neighbors=num_repeats, return_distance=False)[0]
-                    nearest = self.seed_data[idx]
-                    for neighbor in nearest:
-                        sample = self._augument_sample(data, neighbor)
-                        model.partial_fit(sample, target)
-                        # model.partial_fit(data, target)
+                    # idx = self.neighbors.kneighbors(data, n_neighbors=num_repeats, return_distance=False)[0]
+                    # nearest = self.seed_data[idx]
+                    # for neighbor in nearest:
+                    #     sample = self._augument_sample(data, neighbor)
+                    #     model.partial_fit(sample, target)
+                    model.partial_fit(data, target)
             else:
                 model.partial_fit(data, target)
 

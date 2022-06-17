@@ -19,10 +19,10 @@ from utils.utils import OnlineBagging
 
 
 def main():
-    np.random.seed(42)
+    # np.random.seed(42)
     args = parse_args()
 
-    seed_data, seed_target, train_stream, test_X, test_y = utils.utils.get_data(args.stream_len, args.seed_size)
+    seed_data, seed_target, train_stream, test_X, test_y = utils.utils.get_data(args.stream_len, args.seed_size, args.random_seed)
     if args.method == 'all_labeled_ensemble':
         models = [get_base_model(args) for _ in range(args.num_classifiers)]
         model = utils.ensemble.Ensemble(models, diversify=args.ensemble_diversify)
@@ -53,7 +53,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--stream_len', type=int, default=10000)
-    parser.add_argument('--seed_size', type=int, default=200)
+    parser.add_argument('--seed_size', type=int, default=200, help='seed size for model training')
+    parser.add_argument('--random_seed', type=int, default=2042)
     parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--budget', type=int, default=100)
     parser.add_argument('--method', choices=('ours', 'ours_new', 'all_labeled', 'all_labeled_ensemble', 'confidence'), default='ours')
@@ -73,7 +74,7 @@ def get_base_model(args):
         model = GaussianNB()
     elif args.base_model == 'mlp':
         # model = MLPClassifier(learning_rate_init=0.008, max_iter=1000)
-        model = utils.mlp_pytorch.MLPClassifierPytorch(learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
+        model = utils.mlp_pytorch.MLPClassifierPytorch(hidden_layer_sizes=(100, 100), learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
     elif args.base_model == 'online_bagging':
         model = OnlineBagging(base_estimator=MLPClassifier(learning_rate_init=0.01, max_iter=500), n_estimators=5)
     else:
@@ -134,7 +135,7 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                                 print(f'{i} label = {label}, current_dist = {current_dist} delta_p = {delta_p}')
 
                     if train_with_selflabeling:  # label == target and
-                        model.partial_fit(obj, label, poisson_lambda=1.0)
+                        model.partial_fit(obj, label, poisson_lambda=poisson_lambda)
                         last_predictions.append(int(label))
 
                     if args.debug and label != target:
@@ -146,11 +147,6 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                         print('\n\n')
                 else:
                     if budget > 0:
-                        most_confident_idx = np.argmax([np.max(supp) for supp in supports])
-                        most_confident_pred = predictions[most_confident_idx]
-                        min_supp = np.min(supports[:, :, most_confident_pred])
-
-                        # poisson_lambda = max_supp / min_supp
                         poisson_lambda = max_supp / prediction_threshold
                         model.partial_fit(obj, target, poisson_lambda=1.0)
                         last_predictions.append(int(target))
@@ -161,7 +157,6 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
             else:
                 # traning when there are no confident supports seem to be worse
                 if budget > 0:
-                    # poisson_lambda = prediction_threshold / max_supp
                     poisson_lambda = max_supp / prediction_threshold
                     model.partial_fit(obj, target, poisson_lambda=1.0)
                     last_predictions.append(int(target))
@@ -178,6 +173,7 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                     _, current_dist = np.unique(list(last_predictions), return_counts=True)
                     # print(current_dist)
                     current_dist = current_dist / len(last_predictions)
+                    print(current_dist)
                     delta_p = current_dist[label] - (1.0 / num_classes)
                     if delta_p <= 0.01:
                         model.partial_fit(obj, label)

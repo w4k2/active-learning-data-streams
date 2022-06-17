@@ -46,12 +46,12 @@ class OnlineBagging(StreamingEnsemble):
         return self
 
 
-def get_data(stream_len, seed_size):
+def get_data(stream_len, seed_size, random_seed):
     stream = StreamGenerator(
         n_chunks=stream_len,
         chunk_size=1,
         n_drifts=0,
-        random_state=2042,
+        random_state=random_seed,
         y_flip=0.0,
         n_classes=3,
         n_features=5,
