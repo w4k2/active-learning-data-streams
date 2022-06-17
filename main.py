@@ -11,18 +11,18 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 
 import utils.ensemble
-import utils.utils
+import utils.data
 import utils.diversity
 import utils.mlp_pytorch
 import utils.new_model
-from utils.utils import OnlineBagging
+from utils.online_bagging import OnlineBagging
 
 
 def main():
     # np.random.seed(42)
     args = parse_args()
 
-    seed_data, seed_target, train_stream, test_X, test_y = utils.utils.get_data(args.stream_len, args.seed_size, args.random_seed)
+    seed_data, seed_target, train_stream, test_X, test_y = utils.data.get_data(args.stream_len, args.seed_size, args.chunk_size, args.random_seed)
     if args.method == 'all_labeled_ensemble':
         models = [get_base_model(args) for _ in range(args.num_classifiers)]
         model = utils.ensemble.Ensemble(models, diversify=args.ensemble_diversify)
@@ -54,15 +54,17 @@ def parse_args():
 
     parser.add_argument('--stream_len', type=int, default=10000)
     parser.add_argument('--seed_size', type=int, default=200, help='seed size for model training')
+    parser.add_argument('--chunk_size', type=int, default=100, help='chunk size in data generator')
     parser.add_argument('--random_seed', type=int, default=2042)
-    parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--budget', type=int, default=100)
+
     parser.add_argument('--method', choices=('ours', 'ours_new', 'all_labeled', 'all_labeled_ensemble', 'confidence'), default='ours')
+    parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
     parser.add_argument('--ensemble_diversify', action='store_true')
     parser.add_argument('--num_classifiers', type=int, default=9)
-    parser.add_argument('--debug', action='store_true')
 
+    parser.add_argument('--debug', action='store_true')
     parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for Adam optimizer')
 
     args = parser.parse_args()
