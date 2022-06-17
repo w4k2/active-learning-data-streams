@@ -55,19 +55,30 @@ class Ensemble:
         predictions = np.stack(predictions, axis=0)
         return predictions
 
-    def partial_fit(self, data, target, poisson_lambda=1.0):
+    def partial_fit(self, data, target, poisson_lambda):
         for model in self.models:
             if self.diversify:
                 num_repeats = np.random.poisson(lam=poisson_lambda)
-                num_repeats = min(num_repeats, 4)  # TODO should we realy use this?
-                if num_repeats > 0:
-                    target = np.ravel(target)
+                # num_repeats = min(num_repeats, 4)  # TODO should we realy use this?
+                if np.sum(num_repeats) > 0:
+                    train_data = []
+                    train_target = []
+                    for x, y, n in zip(data, target, num_repeats):
+                        x = np.expand_dims(x, axis=0)
+                        train_data.append(np.repeat(x, repeats=n, axis=0))
+                        y = np.expand_dims(y, axis=0)
+                        train_target.append(np.repeat(y, repeats=n, axis=0))
+
+                    train_data = np.concatenate(train_data, axis=0)
+                    train_target = np.concatenate(train_target, axis=0)
+
                     # idx = self.neighbors.kneighbors(data, n_neighbors=num_repeats, return_distance=False)[0]
                     # nearest = self.seed_data[idx]
                     # for neighbor in nearest:
                     #     sample = self._augument_sample(data, neighbor)
                     #     model.partial_fit(sample, target)
-                    model.partial_fit(data, target)
+                    target = np.ravel(target)
+                    model.partial_fit(train_data, train_target)
             else:
                 model.partial_fit(data, target)
 

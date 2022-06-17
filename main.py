@@ -107,6 +107,7 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
 
             train_chunk = []
             train_target = []
+            train_lambdas = []
             for obj, target in zip(chunk, chunk_target):
                 obj = np.expand_dims(obj, axis=0)
                 target = np.expand_dims(target, axis=0)
@@ -127,7 +128,7 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                         if budget > 0:
                             poisson_lambda = max_supp / prediction_threshold
                         else:
-                            poisson_lambda = abs(prediction_threshold - max_supp) / prediction_threshold
+                            poisson_lambda = 1.0  # abs(prediction_threshold - max_supp) / prediction_threshold
                         label = confident_preds[0]
                         # label = np.expand_dims(label, 0)
 
@@ -146,6 +147,7 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                             # model.partial_fit(obj, label, poisson_lambda=poisson_lambda)
                             train_chunk.append(obj)
                             train_target.append(label)
+                            train_lambdas.append(poisson_lambda)
                             last_predictions.append(int(label))
 
                         if args.debug and label != target:
@@ -163,6 +165,7 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
                             budget -= 1
                             train_chunk.append(obj)
                             train_target.append(target)
+                            train_lambdas.append(poisson_lambda)
 
                 else:
                     if budget > 0:
@@ -173,10 +176,11 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
 
                         train_chunk.append(obj)
                         train_target.append(target)
+                        train_lambdas.append(poisson_lambda)
 
             train_chunk = np.concatenate(train_chunk, axis=0)
             train_target = np.concatenate(train_target, axis=0)
-            model.partial_fit(train_chunk, train_target, poisson_lambda=1.0)
+            model.partial_fit(train_chunk, train_target, poisson_lambda=train_lambdas)
 
         elif args.method == 'ours_new':
             pred_prob = model.predict_proba(obj)
@@ -239,50 +243,6 @@ def stream_learning(train_stream, test_X, test_y, seed_data, seed_target, model,
 
     print(f'budget after training = {budget}')
     return acc, budget_end, all_ensemble_pred
-
-
-def train_unconfident(model, prediction_threshold, obj, target, supports, predictions, last_predictions, debug=False):
-    idx = np.argmax([np.max(s) for s in supports])
-    label = predictions[idx]
-    label = np.expand_dims(label, 0)
-    last_predictions.append(int(label))
-    max_supp = np.max(supports[idx])
-    poisson_lambda = abs(prediction_threshold - max_supp) / prediction_threshold
-    if debug and label != target:
-        print('\ntraining with wrong target - incosistant or unconfident labels')
-        print('max_support = ', supports)
-        print('predictions = ', predictions)
-        print('target = ', target)
-        print('poisson_lambda = ', poisson_lambda)
-    model.partial_fit(obj, label, poisson_lambda)
-
-
-def plot_confidence(pool, data, target):
-    for i, model in enumerate(pool):
-        correct_predictions = [0 for _ in range(10)]
-        all_predictions = [0 for _ in range(10)]
-        for x, y in zip(data, target):
-            y_pred = model.predict_proba(np.expand_dims(x, axis=0))
-
-            interval_idx = math.floor(np.max(y_pred)*10)
-            if interval_idx == 10:
-                interval_idx = 9
-            all_predictions[interval_idx] += 1
-            if np.argmax(y_pred, axis=1) == y:
-                correct_predictions[interval_idx] += 1
-
-        confidence_plot = [correct/num_all if num_all != 0 else 0 for correct, num_all in zip(correct_predictions, all_predictions)]
-
-        plt.subplot(len(pool), 2, i*2 + 1)
-        plt.bar(list(range(10)), confidence_plot)
-        plt.xlabel('confidence intervals')
-        plt.ylabel('accuracy')
-
-        plt.subplot(len(pool), 2, i*2 + 2)
-        plt.bar(list(range(10)), all_predictions)
-        plt.xlabel('confidence intervals')
-        plt.ylabel('number of predictions')
-    plt.show()
 
 
 if __name__ == '__main__':
