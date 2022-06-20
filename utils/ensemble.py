@@ -59,6 +59,8 @@ class Ensemble:
         for model in self.models:
             if self.diversify:
                 num_repeats = np.random.poisson(lam=poisson_lambda)
+                # num_repeats = np.maximum(num_repeats, 1)
+                num_repeats = np.minimum(num_repeats, 4)
                 # num_repeats = min(num_repeats, 4)  # TODO should we realy use this?
                 if np.sum(num_repeats) > 0:
                     train_data = []
