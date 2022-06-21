@@ -154,14 +154,20 @@ def stream_learning(train_stream, seed_data, seed_target, model, args):
     return acc, budget_end
 
 
-def compute_acc(predictions_list, targets_list, batch_size=100):
+def compute_acc(predictions_list, targets_list, begin_at=30):
     acc_stream = list()
-    for i in range(30, len(predictions_list)):
-        preds = predictions_list[:i]
-        preds = np.stack(preds)
-        targets = targets_list[:i]
-        targets = np.stack(targets)
-        acc = accuracy_score(targets, preds)
+    num_correct = sum(1 if p == t else 0 for p, t in zip(predictions_list[:begin_at], targets_list[:begin_at]))
+    num_all = begin_at
+
+    acc = num_correct / num_all
+    acc_stream.append(acc)
+
+    for i in range(begin_at, len(predictions_list)):
+        if predictions_list[i] == targets_list[i]:
+            num_correct += 1
+        num_all += 1
+
+        acc = num_correct / num_all
         acc_stream.append(acc)
     return acc_stream
 

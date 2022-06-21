@@ -39,11 +39,8 @@ class Ours(SelfLabelingStrategy):
                 confident_supports.append(max_supp)
                 confident_preds.append(pred)
 
-        if len(confident_supports) > 0:
-            if all(pred == confident_preds[0] for pred in confident_preds):
-                return False
-            else:
-                return True
+        if len(confident_supports) > 0 and all(pred == confident_preds[0] for pred in confident_preds):
+            return False
         else:
             return True
 
