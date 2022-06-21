@@ -61,7 +61,8 @@ def parse_args():
     parser.add_argument('--budget', type=int, default=0.5)
 
     parser.add_argument('--method', choices=('ours', 'all_labeled',
-                        'all_labeled_ensemble', 'random', 'fixed_uncertainty'), default='ours')
+                        'all_labeled_ensemble', 'random', 'fixed_uncertainty',
+                                             'variable_uncertainty', 'variable_randomized_uncertainty'), default='ours')
     parser.add_argument('--base_model', choices=('mlp',
                         'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
@@ -113,6 +114,12 @@ def stream_learning(train_stream, seed_data, seed_target, model, args):
     elif args.method == 'fixed_uncertainty':
         strategy = active_learning_strategies.FixedUncertainty(
             model, args.prediction_threshold)
+    elif args.method == 'variable_uncertainty':
+        strategy = active_learning_strategies.VariableUncertainty(
+            model, args.prediction_threshold)
+    elif args.method == 'variable_randomized_uncertainty':
+        strategy = active_learning_strategies.VariableRandomizedUncertainty(
+            model, args.prediction_threshold)
 
     train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
 
@@ -132,7 +139,7 @@ def stream_learning(train_stream, seed_data, seed_target, model, args):
                 train, label = strategy.use_self_labeling(obj, current_budget, args.budget)
                 if train:
                     model.partial_fit(obj, label)
-        elif args.method in ('random', 'fixed_uncertainty') and current_budget > 0:
+        elif args.method in ('random', 'fixed_uncertainty', 'variable_uncertainty', 'variable_randomized_uncertainty') and current_budget > 0:
             if strategy.request_label(obj, current_budget, args.budget):
                 model.partial_fit(obj, target)
                 current_budget -= 1

@@ -21,9 +21,11 @@ def plot_model(model_name, args):
         'results/all_labeled_ensemble/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/random/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/fixed_uncertainty/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/variable_uncertainty/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/variable_randomized_uncertainty/{}_{}_{}_seed_{}_budget_{}.npy',
     ]
     plot_labels = ['ours', 'all labeled', 'all labeled ensemble',
-                   'random', 'fixed_uncertainty']
+                   'random', 'fixed_uncertainty', 'variable_uncertainty', 'variable_randomized_uncertainty']
 
     diversity = None
     diversity_unsupervised = None
