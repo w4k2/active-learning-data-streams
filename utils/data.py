@@ -2,11 +2,11 @@ import numpy as np
 from strlearn.streams import StreamGenerator
 
 
-def get_data(stream_len, seed_size, random_seed, num_classes):
+def get_data(stream_len, seed_size, random_seed, num_classes, num_drifts):
     stream = StreamGenerator(
         n_chunks=stream_len,
         chunk_size=1,
-        n_drifts=0,
+        n_drifts=num_drifts,
         random_state=random_seed,
         y_flip=0.0,
         n_classes=num_classes,

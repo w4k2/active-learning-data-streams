@@ -25,7 +25,7 @@ def main():
     seed_everything(args.random_seed)
 
     seed_data, seed_target, train_stream = utils.data.get_data(
-        args.stream_len, args.seed_size, args.random_seed, args.num_classes)
+        args.stream_len, args.seed_size, args.random_seed, args.num_classes, args.num_drifts)
     if args.method == 'all_labeled_ensemble':
         models = [get_base_model(args) for _ in range(args.num_classifiers)]
         model = utils.ensemble.Ensemble(
@@ -57,6 +57,7 @@ def parse_args():
     parser.add_argument('--seed_size', type=int, default=200,
                         help='seed size for model training')
     parser.add_argument('--random_seed', type=int, default=2042)
+    parser.add_argument('--num_drifts', type=int, default=0)
     parser.add_argument('--num_classes', type=int, default=3)
     parser.add_argument('--budget', type=int, default=0.5)
 
