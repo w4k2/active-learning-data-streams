@@ -1,9 +1,7 @@
 import numpy as np
-import numpy as np
 from sklearn.base import clone
+
 from strlearn.ensembles.base import StreamingEnsemble
-from strlearn.streams import StreamGenerator
-from sklearn.model_selection import train_test_split
 
 
 class OnlineBagging(StreamingEnsemble):
@@ -44,45 +42,3 @@ class OnlineBagging(StreamingEnsemble):
         self.was_trained = True
 
         return self
-
-
-def get_data(stream_len, seed_size, random_seed):
-    stream = StreamGenerator(
-        n_chunks=stream_len,
-        chunk_size=1,
-        n_drifts=0,
-        random_state=random_seed,
-        y_flip=0.0,
-        n_classes=3,
-        n_features=5,
-        n_informative=5,
-        n_redundant=0,
-    )
-
-    seed_data, seed_target, stream = select_seed(stream, seed_size)
-    data, target = zip(*stream)
-    X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=0.25, random_state=42, stratify=target)
-    train_stream = list(zip(X_train, y_train))
-    X_test = np.squeeze(X_test)
-
-    return seed_data, seed_target, train_stream, X_test, y_test
-
-
-def select_seed(stream, seed_size):
-    data = []
-    target = []
-    new_stream = []
-
-    while len(data) < seed_size:
-        X, y = stream.get_chunk()
-        data.append(X)
-        target.append(y)
-
-    while not stream.is_dry():
-        batch = stream.get_chunk()
-        new_stream.append(batch)
-
-    data = np.concatenate(data, axis=0)
-    target = np.concatenate(target, axis=0)
-
-    return data, target, new_stream
