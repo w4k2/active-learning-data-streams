@@ -19,9 +19,11 @@ def plot_model(model_name, args):
         'results/ours/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/all_labeled/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/all_labeled_ensemble/{}_{}_{}_seed_{}_budget_{}.npy',
-        'results/confidence/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/random/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/fixed_uncertainty/{}_{}_{}_seed_{}_budget_{}.npy',
     ]
-    plot_labels = ['ours', 'all labeled', 'all labeled ensemble', 'confidence']
+    plot_labels = ['ours', 'all labeled', 'all labeled ensemble',
+                   'random', 'fixed_uncertainty']
 
     diversity = None
     diversity_unsupervised = None
@@ -29,9 +31,11 @@ def plot_model(model_name, args):
     # plt.subplot(3, 1, 1)
 
     for i, (filepath, result_label) in enumerate(zip(results, plot_labels)):
-        acc = np.load(filepath.format('acc', model_name, args.stream_len, args.seed_size, args.budget))
+        acc = np.load(filepath.format('acc', model_name,
+                      args.stream_len, args.seed_size, args.budget))
         acc = gaussian_filter1d(acc, sigma=5)
-        budget_end = np.load(filepath.format('budget_end', model_name, args.stream_len, args.seed_size, args.budget))
+        budget_end = np.load(filepath.format(
+            'budget_end', model_name, args.stream_len, args.seed_size, args.budget))
         print('budget_end = ', budget_end)
 
         # if result_label == 'ours':
@@ -43,7 +47,8 @@ def plot_model(model_name, args):
         plt.plot(acc, color=f"C{i}", label=result_label)
         if budget_end > -1:
             plt.axvline(x=budget_end, color=f"C{i}", linestyle="--")
-        plt.title(f'{model_name} strlen {args.stream_len} seed size {args.seed_size} budget {args.budget}')
+        plt.title(
+            f'{model_name} strlen {args.stream_len} seed size {args.seed_size} budget {args.budget}')
         plt.xlabel('samples')
         plt.ylabel('Accuracy')
 

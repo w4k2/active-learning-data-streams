@@ -1,15 +1,17 @@
-import collections
 import argparse
 import math
 import os
 import tqdm
-
-import matplotlib.pyplot as plt
+import torch
+import random
 import numpy as np
+
 from sklearn.metrics import accuracy_score
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 
+import active_learning_strategies
+import self_labeling_strategies
 import utils.ensemble
 import utils.data
 import utils.diversity
@@ -19,8 +21,11 @@ from utils.online_bagging import OnlineBagging
 
 
 def main():
-    np.random.seed(42)
     args = parse_args()
+
+    np.random.seed(args.random_seed)
+    random.seed(args.random_seed)
+    torch.manual_seed(args.random_seed)
 
     seed_data, seed_target, train_stream = utils.data.get_data(
         args.stream_len, args.seed_size, args.random_seed, args.num_classes)
@@ -58,8 +63,8 @@ def parse_args():
     parser.add_argument('--num_classes', type=int, default=3)
     parser.add_argument('--budget', type=int, default=0.5)
 
-    parser.add_argument('--method', choices=('ours', 'ours_new', 'all_labeled',
-                        'all_labeled_ensemble', 'confidence'), default='ours')
+    parser.add_argument('--method', choices=('ours', 'all_labeled',
+                        'all_labeled_ensemble', 'random', 'fixed_uncertainty'), default='ours')
     parser.add_argument('--base_model', choices=('mlp',
                         'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
@@ -92,134 +97,59 @@ def stream_learning(train_stream, seed_data, seed_target, model, args):
     predictions_list = list()
     targets_list = list()
     budget_end = -1
-    prediction_threshold = args.prediction_threshold
-    labeling_budget = math.floor(len(train_stream) * args.budget)
+    current_budget = math.floor(len(train_stream) * args.budget)
 
-    if not args.debug:
-        train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
+    if args.method == 'ours':
+        strategy = self_labeling_strategies.Ours(model, args.num_classes, args.prediction_threshold)
+    elif args.method == 'random':
+        strategy = active_learning_strategies.RandomSampling(model)
+    elif args.method == 'fixed_uncertainty':
+        strategy = active_learning_strategies.FixedUncertainty(
+            model, args.prediction_threshold)
 
-    num_classes = args.num_classes
-    last_predictions = collections.deque([], maxlen=500)
-    train_with_selflabeling = True
+    train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
 
     for i, (obj, target) in enumerate(train_stream):
         predictions_list.append(model.predict(obj))
         targets_list.append(target)
 
-        if args.method == 'ours':
-            supports = model.predict_proba_separate(obj)
-            predictions = np.argmax(supports, axis=2)
-
-            confident_supports = []
-            confident_preds = []
-            for supp, pred in zip(supports, predictions):
-                if np.max(supp) > prediction_threshold:
-                    max_supp = np.max(supp)
-                    confident_supports.append(max_supp)
-                    confident_preds.append(pred)
-
-            if len(confident_supports) > 0:
-                if all(pred == confident_preds[0] for pred in confident_preds):
-                    max_supp = max(confident_supports)
-                    if labeling_budget > 0:
-                        poisson_lambda = max_supp / prediction_threshold
-                    else:
-                        poisson_lambda = abs(
-                            prediction_threshold - max_supp) / prediction_threshold
-                    label = confident_preds[0]
-                    label = np.expand_dims(label, 0)
-
-                    if len(last_predictions) >= min(last_predictions.maxlen, 30):
-                        _, current_dist = np.unique(
-                            list(last_predictions), return_counts=True)
-                        current_dist = current_dist / len(last_predictions)
-                        delta_p = current_dist[label] - (1.0 / num_classes)
-                        if delta_p <= 0:
-                            train_with_selflabeling = True
-                        else:
-                            train_with_selflabeling = False
-                            if args.debug:
-                                print(
-                                    f'{i} label = {label}, current_dist = {current_dist} delta_p = {delta_p}')
-
-                    if train_with_selflabeling:  # label == target and
-                        model.partial_fit(
-                            obj, label, poisson_lambda=poisson_lambda)
-                        last_predictions.append(int(label))
-
-                    if args.debug and label != target:
-                        print(
-                            f'sample {i} training with wrong target - consistent confident supports')
-                        print('max_support = ', supports)
-                        print('predictions = ', predictions)
-                        print('target = ', target)
-                        print('poisson_lambda = ', poisson_lambda)
-                        print('\n\n')
-                else:
-                    if labeling_budget > 0:
-                        poisson_lambda = max_supp / prediction_threshold
-                        model.partial_fit(obj, target, poisson_lambda=1.0)
-                        last_predictions.append(int(target))
-                        labeling_budget -= 1
-                    else:
-                        # train_unconfident(model, prediction_threshold, obj, target, supports, predictions, last_predictions, debug=args.debug)
-                        pass
-            else:
-                # traning when there are no confident supports seem to be worse
-                if labeling_budget > 0:
-                    poisson_lambda = max_supp / prediction_threshold
-                    model.partial_fit(obj, target, poisson_lambda=1.0)
-                    last_predictions.append(int(target))
-                    labeling_budget -= 1
-                else:
-                    # train_unconfident(model, prediction_threshold, obj, target, supports, predictions, last_predictions, debug=args.debug)
-                    pass
-        elif args.method in ('all_labeled', 'all_labeled_ensemble'):
+        if args.method in ('all_labeled', 'all_labeled_ensemble'):
             model.partial_fit(obj, target)
-        elif args.method == 'confidence' and labeling_budget > 0:
-            pred_prob = model.predict_proba(obj)
-            max_prob = np.max(pred_prob, axis=1)[0]
-            if max_prob < prediction_threshold:
+        elif args.method in ('ours', ):
+            if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
                 model.partial_fit(obj, target)
-                labeling_budget -= 1
+                current_budget -= 1
+                if args.method == 'ours':
+                    strategy.last_predictions.append(int(target))
+            else:
+                train, label = strategy.use_self_labeling(obj, current_budget, args.budget)
+                if train:
+                    model.partial_fit(obj, label)
+        elif args.method in ('random', 'confidence') and current_budget > 0:
+            if strategy.request_label(obj, current_budget, args.budget):
+                model.partial_fit(obj, target)
+                current_budget -= 1
 
-        if labeling_budget == 0:
-            labeling_budget = -1
+        if current_budget == 0:
+            current_budget = -1
             budget_end = i
             print(f'budget ended at {i}')
 
     acc = compute_acc(predictions_list, targets_list)
-    print(f'budget after training = {labeling_budget}')
+    print(f'budget after training = {current_budget}')
     return acc, budget_end
 
 
-def compute_acc(predictions_list, targets_list, batch_size=1000):
+def compute_acc(predictions_list, targets_list, batch_size=100):
     acc_stream = list()
-    for i in range(0, len(predictions_list) - batch_size + 1):
-        preds = predictions_list[i:i+batch_size]
+    for i in range(30, len(predictions_list)):
+        preds = predictions_list[:i]
         preds = np.stack(preds)
-        targets = targets_list[i:i+batch_size]
+        targets = targets_list[:i]
         targets = np.stack(targets)
         acc = accuracy_score(targets, preds)
         acc_stream.append(acc)
     return acc_stream
-
-
-def train_unconfident(model, prediction_threshold, obj, target, supports, predictions, last_predictions, debug=False):
-    idx = np.argmax([np.max(s) for s in supports])
-    label = predictions[idx]
-    label = np.expand_dims(label, 0)
-    last_predictions.append(int(label))
-    max_supp = np.max(supports[idx])
-    poisson_lambda = abs(prediction_threshold -
-                         max_supp) / prediction_threshold
-    if debug and label != target:
-        print('\ntraining with wrong target - incosistant or unconfident labels')
-        print('max_support = ', supports)
-        print('predictions = ', predictions)
-        print('target = ', target)
-        print('poisson_lambda = ', poisson_lambda)
-    model.partial_fit(obj, label, poisson_lambda)
 
 
 if __name__ == '__main__':
