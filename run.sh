@@ -6,7 +6,7 @@ python main.py --method="all_labeled" --base_model="mlp"
 python main.py --method="all_labeled_ensemble" --base_model="mlp"
 
 python main.py --method="random" --base_model="mlp" 
-python main.py --method="fixed_uncertainty" --base_model="mlp"
+python main.py --method="fixed_uncertainty" --base_model="mlp" --prediction_threshold=0.8
 
 # python main.py --base_model="ng"
 # python main.py --base_model="ng"

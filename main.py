@@ -22,10 +22,7 @@ from utils.online_bagging import OnlineBagging
 
 def main():
     args = parse_args()
-
-    np.random.seed(args.random_seed)
-    random.seed(args.random_seed)
-    torch.manual_seed(args.random_seed)
+    seed_everything(args.random_seed)
 
     seed_data, seed_target, train_stream = utils.data.get_data(
         args.stream_len, args.seed_size, args.random_seed, args.num_classes)
@@ -79,6 +76,16 @@ def parse_args():
     return args
 
 
+def seed_everything(seed):
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
+
+
 def get_base_model(args):
     if args.base_model == 'ng':
         model = GaussianNB()
@@ -125,7 +132,7 @@ def stream_learning(train_stream, seed_data, seed_target, model, args):
                 train, label = strategy.use_self_labeling(obj, current_budget, args.budget)
                 if train:
                     model.partial_fit(obj, label)
-        elif args.method in ('random', 'confidence') and current_budget > 0:
+        elif args.method in ('random', 'fixed_uncertainty') and current_budget > 0:
             if strategy.request_label(obj, current_budget, args.budget):
                 model.partial_fit(obj, target)
                 current_budget -= 1
@@ -135,8 +142,8 @@ def stream_learning(train_stream, seed_data, seed_target, model, args):
             budget_end = i
             print(f'budget ended at {i}')
 
-    acc = compute_acc(predictions_list, targets_list)
     print(f'budget after training = {current_budget}')
+    acc = compute_acc(predictions_list, targets_list)
     return acc, budget_end
 
 
