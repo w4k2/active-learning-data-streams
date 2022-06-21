@@ -78,6 +78,6 @@ class Ours(SelfLabelingStrategy):
             if self.use_selflabeling:
                 self.last_predictions.append(int(label))
 
-            return self.use_selflabeling, label
+            return self.use_selflabeling, label, {'poisson_lambda': poisson_lambda}
 
         return False, None

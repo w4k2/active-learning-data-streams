@@ -129,6 +129,10 @@ def stream_learning(train_stream, seed_data, seed_target, model, args):
 
         if args.method in ('all_labeled', 'all_labeled_ensemble'):
             model.partial_fit(obj, target)
+        elif args.method in ('random', 'fixed_uncertainty', 'variable_uncertainty', 'variable_randomized_uncertainty') and current_budget > 0:
+            if strategy.request_label(obj, current_budget, args.budget):
+                model.partial_fit(obj, target)
+                current_budget -= 1
         elif args.method in ('ours', ):
             if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
                 model.partial_fit(obj, target)
@@ -136,13 +140,9 @@ def stream_learning(train_stream, seed_data, seed_target, model, args):
                 if args.method == 'ours':
                     strategy.last_predictions.append(int(target))
             else:
-                train, label = strategy.use_self_labeling(obj, current_budget, args.budget)
+                train, label, train_kwargs = strategy.use_self_labeling(obj, current_budget, args.budget)
                 if train:
-                    model.partial_fit(obj, label)
-        elif args.method in ('random', 'fixed_uncertainty', 'variable_uncertainty', 'variable_randomized_uncertainty') and current_budget > 0:
-            if strategy.request_label(obj, current_budget, args.budget):
-                model.partial_fit(obj, target)
-                current_budget -= 1
+                    model.partial_fit(obj, label, **train_kwargs)
 
         if current_budget == 0:
             current_budget = -1

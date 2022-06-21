@@ -1,6 +1,6 @@
 #! /bin/bash
 
-python main.py --method="ours" --base_model="mlp" --beta1=0.99999 --prediction_threshold=0.1
+python main.py --method="ours" --base_model="mlp" --beta1=0.99999 --prediction_threshold=0.3
 
 python main.py --method="all_labeled" --base_model="mlp"
 python main.py --method="all_labeled_ensemble" --base_model="mlp"
