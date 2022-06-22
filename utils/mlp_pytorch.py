@@ -4,7 +4,6 @@ import torch.optim as optim
 import torch.nn.functional as F
 import functools
 import numpy as np
-import collections
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 
@@ -193,3 +192,6 @@ class MLPClassifierPytorch(BaseEstimator, ClassifierMixin):
             return optim.SGD(self.model.parameters(), lr=self.learning_rate_init, momentum=self.momentum,
                              weight_decay=self.alpha, nesterov=self.nesterovs_momentum)
         raise ValueError('Invalid solver')
+
+    def reset_optimizer(self):
+        self.optimizer = self._get_optimizer()

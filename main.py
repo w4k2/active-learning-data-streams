@@ -5,6 +5,7 @@ import tqdm
 import torch
 import random
 import numpy as np
+import river.drift
 
 from sklearn.metrics import accuracy_score
 from sklearn.naive_bayes import GaussianNB
@@ -53,10 +54,10 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--stream_len', type=int, default=10000)
+    parser.add_argument('--stream_len', type=int, default=100000)
     parser.add_argument('--seed_size', type=int, default=200,
                         help='seed size for model training')
-    parser.add_argument('--random_seed', type=int, default=2042)
+    parser.add_argument('--random_seed', type=int, default=1410)
     parser.add_argument('--num_drifts', type=int, default=0)
     parser.add_argument('--num_classes', type=int, default=3)
     parser.add_argument('--budget', type=int, default=0.5)
@@ -92,7 +93,9 @@ def get_base_model(args):
     if args.base_model == 'ng':
         model = GaussianNB()
     elif args.base_model == 'mlp':
-        model = utils.mlp_pytorch.MLPClassifierPytorch(hidden_layer_sizes=(
+        # model = utils.mlp_pytorch.MLPClassifierPytorch(hidden_layer_sizes=(
+        #     100, 100), learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
+        model = MLPClassifier(hidden_layer_sizes=(
             100, 100), learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
     elif args.base_model == 'online_bagging':
         model = OnlineBagging(base_estimator=MLPClassifier(
@@ -123,10 +126,12 @@ def stream_learning(train_stream, seed_data, seed_target, model, args):
             model, args.prediction_threshold)
 
     train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
+    drift_detector = river.drift.DDM()
 
     for i, (obj, target) in enumerate(train_stream):
-        predictions_list.append(model.predict(obj))
-        targets_list.append(target)
+        y_pred = model.predict(obj)
+        predictions_list.append(int(y_pred))
+        targets_list.append(int(target))
 
         if args.method in ('all_labeled', 'all_labeled_ensemble'):
             model.partial_fit(obj, target)
@@ -138,10 +143,16 @@ def stream_learning(train_stream, seed_data, seed_target, model, args):
             if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
                 model.partial_fit(obj, target)
                 current_budget -= 1
+                change_detected, _ = drift_detector.update(y_pred != target)
+                if change_detected:
+                    print('change detected at', i)
+                if change_detected:
+                    strategy.handle_change()
                 if args.method == 'ours':
                     strategy.last_predictions.append(int(target))
             else:
-                train, label, train_kwargs = strategy.use_self_labeling(obj, current_budget, args.budget)
+                change_detected = drift_detector.change_detected
+                train, label, train_kwargs = strategy.use_self_labeling(obj, current_budget, args.budget, change_detected)
                 if train:
                     model.partial_fit(obj, label, **train_kwargs)
 
@@ -155,20 +166,11 @@ def stream_learning(train_stream, seed_data, seed_target, model, args):
     return acc, budget_end
 
 
-def compute_acc(predictions_list, targets_list, begin_at=30):
+def compute_acc(predictions_list, targets_list, begin_at=100):
     acc_stream = list()
-    num_correct = sum(1 if p == t else 0 for p, t in zip(predictions_list[:begin_at], targets_list[:begin_at]))
-    num_all = begin_at
-
-    acc = num_correct / num_all
-    acc_stream.append(acc)
 
     for i in range(begin_at, len(predictions_list)):
-        if predictions_list[i] == targets_list[i]:
-            num_correct += 1
-        num_all += 1
-
-        acc = num_correct / num_all
+        acc = accuracy_score(targets_list[i-begin_at:i], predictions_list[i-begin_at:i])
         acc_stream.append(acc)
     return acc_stream
 

@@ -35,7 +35,7 @@ def plot_model(model_name, args):
     for i, (filepath, result_label) in enumerate(zip(results, plot_labels)):
         acc = np.load(filepath.format('acc', model_name,
                       args.stream_len, args.seed_size, args.budget))
-        acc = gaussian_filter1d(acc, sigma=5)
+        acc = gaussian_filter1d(acc, sigma=100)
         budget_end = np.load(filepath.format(
             'budget_end', model_name, args.stream_len, args.seed_size, args.budget))
         print('budget_end = ', budget_end)

@@ -13,7 +13,7 @@ class SelfLabelingStrategy(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def use_self_labeling(self, obj, current_budget, budget):
+    def use_self_labeling(self, obj, current_budget, budget, change_detected):
         raise NotImplementedError
 
 
@@ -27,7 +27,13 @@ class Ours(SelfLabelingStrategy):
         self.last_predictions = collections.deque([], maxlen=500)
         self.use_selflabeling = True
 
+        self.change_timer = 0
+
     def request_label(self, obj, current_budget, budget):
+        if self.change_timer > 0:
+            self.change_timer -= 1
+            return True
+
         supports = self.model.predict_proba_separate(obj)
         predictions = np.argmax(supports, axis=2)
 
@@ -44,7 +50,11 @@ class Ours(SelfLabelingStrategy):
         else:
             return True
 
-    def use_self_labeling(self, obj, current_budget, budget):
+    def use_self_labeling(self, obj, current_budget, budget, change_detected):
+        if self.change_timer > 0:
+            self.change_timer -= 1
+            return False, None, {}
+
         supports = self.model.predict_proba_separate(obj)
         predictions = np.argmax(supports, axis=2)
 
@@ -81,3 +91,8 @@ class Ours(SelfLabelingStrategy):
             return self.use_selflabeling, label, {'poisson_lambda': poisson_lambda}
 
         return False, None, {}
+
+    def handle_change(self):
+        self.change_timer = 200
+        # for m in self.model.models:
+        #     m.reset_optimizer()

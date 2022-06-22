@@ -1,5 +1,6 @@
 name: active-learning
 channels:
+  - conda-forget
   - defaults
 dependencies:
   - python=3.8.5
@@ -11,6 +12,7 @@ dependencies:
   - pandas
   - autopep8
   - pytorch
+  - river
   - pip:
     - stream-learn
     - imbalanced-learn
