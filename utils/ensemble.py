@@ -59,6 +59,7 @@ class Ensemble:
         for model in self.models:
             if self.diversify:
                 num_repeats = np.random.poisson(lam=poisson_lambda)
+                num_repeats = min(num_repeats, 4)
                 if num_repeats > 0:
                     target = np.ravel(target)
                     # idx = self.neighbors.kneighbors(data, n_neighbors=num_repeats, return_distance=False)[0]
