@@ -55,16 +55,14 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--stream_len', type=int, default=5000)
-    parser.add_argument('--seed_size', type=int, default=200,
-                        help='seed size for model training')
+    parser.add_argument('--seed_size', type=int, default=200, help='seed size for model training')
     parser.add_argument('--test_size', type=float, default=0.2)
-    parser.add_argument('--random_seed', type=int, default=1410)
+    parser.add_argument('--random_seed', type=int, default=42)
     parser.add_argument('--num_classes', type=int, default=3)
-    parser.add_argument('--budget', type=int, default=0.5)
+    parser.add_argument('--budget', type=int, default=0.3)
 
     parser.add_argument('--method', choices=('ours', 'all_labeled',
-                        'all_labeled_ensemble', 'random', 'fixed_uncertainty',
-                                             'variable_uncertainty', 'variable_randomized_uncertainty'), default='ours')
+                        'all_labeled_ensemble', 'random', 'fixed_uncertainty', 'variable_uncertainty'), default='ours')
     parser.add_argument('--base_model', choices=('mlp',
                         'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
@@ -93,10 +91,10 @@ def get_base_model(args):
     if args.base_model == 'ng':
         model = GaussianNB()
     elif args.base_model == 'mlp':
-        # model = utils.mlp_pytorch.MLPClassifierPytorch(hidden_layer_sizes=(
-        #     100, 100), learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
-        model = MLPClassifier(hidden_layer_sizes=(
-            100, 100), learning_rate_init=0.0001, max_iter=5000, beta_1=args.beta1)
+        model = utils.mlp_pytorch.MLPClassifierPytorch(hidden_layer_sizes=(
+            100, 100), learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
+        # model = MLPClassifier(hidden_layer_sizes=(
+        #     100, 100), learning_rate_init=0.0001, max_iter=5000, beta_1=args.beta1)
     elif args.base_model == 'online_bagging':
         model = OnlineBagging(base_estimator=MLPClassifier(
             learning_rate_init=0.01, max_iter=500), n_estimators=5)
