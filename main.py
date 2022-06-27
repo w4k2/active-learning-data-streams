@@ -91,7 +91,7 @@ def get_base_model(args):
     if args.base_model == 'ng':
         model = GaussianNB()
     elif args.base_model == 'mlp':
-        model = utils.mlp_pytorch.MLPClassifierPytorch(hidden_layer_sizes=(
+        model = utils.mlp_pytorch.MLPClassifierPytorch(hidden_layer_sizes=(  # TODO why it is working better for pytorch implementation of MLP? it is not the case of changing optimizer between fit and partial fit
             100, 100), learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
         # model = MLPClassifier(hidden_layer_sizes=(
         #     100, 100), learning_rate_init=0.0001, max_iter=5000, beta_1=args.beta1)
