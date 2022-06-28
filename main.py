@@ -62,8 +62,7 @@ def parse_args():
 
     parser.add_argument('--method', choices=('ours', 'all_labeled',
                         'all_labeled_ensemble', 'random', 'fixed_uncertainty', 'variable_uncertainty'), default='ours')
-    parser.add_argument('--base_model', choices=('mlp',
-                        'ng', 'online_bagging'), default='mlp')
+    parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
     parser.add_argument('--ensemble_diversify', action='store_true')
     parser.add_argument('--num_classifiers', type=int, default=9)

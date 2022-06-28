@@ -7,10 +7,10 @@ from main import parse_args
 
 def main():
     args = parse_args()
-    plot_model('mlp', args)
+    plot_model(args)
 
 
-def plot_model(model_name, args):
+def plot_model(args):
     results = [
         'results/ours/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/all_labeled/{}_{}_{}_seed_{}_budget_{}.npy',
@@ -23,22 +23,22 @@ def plot_model(model_name, args):
     plot_labels = ['ours', 'all labeled', 'all labeled ensemble', 'random', 'fixed_uncertainty', 'variable_uncertainty']
 
     for i, (filepath, result_label) in enumerate(zip(results, plot_labels)):
-        acc = np.load(filepath.format('acc', model_name, args.stream_len, args.seed_size, args.budget))
+        acc = np.load(filepath.format('acc', args.base_model, args.stream_len, args.seed_size, args.budget))
         acc = gaussian_filter1d(acc, sigma=1)
         budget_end = np.load(filepath.format(
-            'budget_end', model_name, args.stream_len, args.seed_size, args.budget))
+            'budget_end', args.base_model, args.stream_len, args.seed_size, args.budget))
         print('budget_end = ', budget_end)
 
         plt.plot(acc, color=f"C{i}", label=result_label)
         if budget_end > -1:
             plt.axvline(x=budget_end, color=f"C{i}", linestyle="--")
         plt.title(
-            f'{model_name} strlen {args.stream_len} seed size {args.seed_size} budget {args.budget}')
+            f'{args.base_model} strlen {args.stream_len} seed size {args.seed_size} budget {args.budget}')
         plt.xlabel('samples')
         plt.ylabel('Accuracy')
 
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.8))
-    plt.savefig('plots/new_results/{}_{}_{}_{}.png'.format(model_name, args.stream_len, args.seed_size, args.budget), bbox_inches='tight')
+    plt.savefig('plots/new_results/{}_{}_{}_{}.png'.format(args.base_model, args.stream_len, args.seed_size, args.budget), bbox_inches='tight')
     # plt.show()
 
 
