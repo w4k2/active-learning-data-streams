@@ -5,7 +5,6 @@ import tqdm
 import torch
 import random
 import numpy as np
-import river.drift
 
 from sklearn.metrics import accuracy_score
 from sklearn.naive_bayes import GaussianNB
@@ -59,7 +58,7 @@ def parse_args():
     parser.add_argument('--test_size', type=float, default=0.2)
     parser.add_argument('--random_seed', type=int, default=42)
     parser.add_argument('--num_classes', type=int, default=3)
-    parser.add_argument('--budget', type=int, default=0.3)
+    parser.add_argument('--budget', type=float, default=0.3)
 
     parser.add_argument('--method', choices=('ours', 'all_labeled',
                         'all_labeled_ensemble', 'random', 'fixed_uncertainty', 'variable_uncertainty'), default='ours')
@@ -117,9 +116,6 @@ def stream_learning(train_stream, seed_data, seed_target, test_data, test_target
             model, args.prediction_threshold)
     elif args.method == 'variable_uncertainty':
         strategy = active_learning_strategies.VariableUncertainty(
-            model, args.prediction_threshold)
-    elif args.method == 'variable_randomized_uncertainty':
-        strategy = active_learning_strategies.VariableRandomizedUncertainty(
             model, args.prediction_threshold)
 
     train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
