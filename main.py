@@ -68,8 +68,7 @@ def parse_args():
     parser.add_argument('--num_classifiers', type=int, default=9)
 
     parser.add_argument('--debug', action='store_true')
-    parser.add_argument('--beta1', type=float, default=0.9,
-                        help='beta1 for Adam optimizer')
+    parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for Adam optimizer')
 
     args = parser.parse_args()
     return args

@@ -55,8 +55,13 @@ class Ensemble:
         predictions = np.stack(predictions, axis=0)
         return predictions
 
-    def partial_fit(self, data, target, poisson_lambda=1.0):
-        for model in self.models:
+    def partial_fit(self, data, target, poisson_lambda=1.0, train_models=None):
+        if train_models is None:
+            train_models = (True for _ in range(len(self.models)))
+
+        for train, model in zip(train_models, self.models):
+            if not train:
+                continue
             if self.diversify:
                 num_repeats = np.random.poisson(lam=poisson_lambda)
                 num_repeats = min(num_repeats, 4)

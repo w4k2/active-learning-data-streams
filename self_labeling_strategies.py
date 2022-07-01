@@ -50,11 +50,13 @@ class Ours(SelfLabelingStrategy):
 
         confident_supports = []
         confident_preds = []
-        for supp, pred in zip(supports, predictions):
+        confident_models_idxs = set()
+        for i, (supp, pred) in enumerate(zip(supports, predictions)):
             if np.max(supp) > self.prediction_threshold:
                 max_supp = np.max(supp)
                 confident_supports.append(max_supp)
                 confident_preds.append(pred)
+                confident_models_idxs.add(i)
 
         if len(confident_supports) > self.num_agree and all(pred == confident_preds[0] for pred in confident_preds):
             max_supp = max(confident_supports)
@@ -79,6 +81,11 @@ class Ours(SelfLabelingStrategy):
             if use_selflabeling:
                 self.last_predictions.append(int(label))
 
-            return use_selflabeling, label, {'poisson_lambda': poisson_lambda}
+            train_models = [False for _ in range(len(supports))]
+            for idx in range(len(supports)):
+                if not idx in confident_models_idxs:
+                    train_models[idx] = True
+
+            return use_selflabeling, label, {'poisson_lambda': poisson_lambda, 'train_models': train_models}
 
         return False, None, {}
