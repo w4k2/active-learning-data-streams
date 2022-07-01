@@ -38,7 +38,8 @@ def plot_model(args):
         plt.ylabel('Accuracy')
 
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.8))
-    plt.savefig('plots/new_results/{}_{}_{}_{}.png'.format(args.base_model, args.stream_len, args.seed_size, args.budget), bbox_inches='tight')
+    plt.savefig('plots/new_results/{}_stream_len_{}_seed_size_{}_budget_{}_random_seed_{}.png'.format(args.base_model,
+                args.stream_len, args.seed_size, args.budget, args.random_seed), bbox_inches='tight')
     # plt.show()
 
 
