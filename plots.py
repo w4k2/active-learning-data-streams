@@ -20,7 +20,7 @@ def plot_model(args):
         'results/variable_uncertainty/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/variable_randomized_uncertainty/{}_{}_{}_seed_{}_budget_{}.npy',
     ]
-    plot_labels = ['ours', 'all labeled', 'all labeled ensemble', 'random', 'fixed_uncertainty', 'variable_uncertainty']
+    plot_labels = ['ours', 'all labeled', 'all labeled OB', 'random', 'fixed_uncertainty', 'variable_uncertainty']
 
     for i, (filepath, result_label) in enumerate(zip(results, plot_labels)):
         acc = np.load(filepath.format('acc', args.base_model, args.stream_len, args.seed_size, args.budget))

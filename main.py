@@ -27,15 +27,11 @@ def main():
     seed_data, seed_target, test_data, test_target, train_stream = utils.data.get_data(
         args.stream_len, args.seed_size, args.random_seed, args.num_classes, args.test_size)
     if args.method == 'all_labeled_ensemble':
-        models = [get_base_model(args) for _ in range(args.num_classifiers)]
-        model = utils.ensemble.Ensemble(
-            models, diversify=args.ensemble_diversify)
+        base_model = get_base_model(args)
+        model = OnlineBagging(base_estimator=base_model, n_estimators=args.num_classifiers)
     elif args.method == 'ours':
         models = [get_base_model(args) for _ in range(args.num_classifiers)]
         model = utils.ensemble.Ensemble(models, diversify=True)
-    elif args.method == 'ours_new':
-        base_model = get_base_model(args)
-        model = utils.new_model.Model(base_model)
     else:
         model = get_base_model(args)
     model.fit(seed_data, seed_target)
@@ -88,13 +84,10 @@ def get_base_model(args):
     if args.base_model == 'ng':
         model = GaussianNB()
     elif args.base_model == 'mlp':
-        model = utils.mlp_pytorch.MLPClassifierPytorch(hidden_layer_sizes=(  # TODO why it is working better for pytorch implementation of MLP? it is not the case of changing optimizer between fit and partial fit
+        # model = utils.mlp_pytorch.MLPClassifierPytorch(hidden_layer_sizes=(  # TODO why it is working better for pytorch implementation of MLP? it is not the case of changing optimizer between fit and partial fit
+        #     100, 100), learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
+        model = MLPClassifier(hidden_layer_sizes=(
             100, 100), learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
-        # model = MLPClassifier(hidden_layer_sizes=(
-        #     100, 100), learning_rate_init=0.0001, max_iter=5000, beta_1=args.beta1)
-    elif args.base_model == 'online_bagging':
-        model = OnlineBagging(base_estimator=MLPClassifier(
-            learning_rate_init=0.01, max_iter=500), n_estimators=5)
     else:
         raise ValueError("Invalid base classifier")
     return model
