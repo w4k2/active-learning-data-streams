@@ -39,12 +39,13 @@ def generate_table(paramters_to_load, column_names):
         'results/ours/acc_{}_{}_seed_{}_budget_{}.npy',
         'results/all_labeled/acc_{}_{}_seed_{}_budget_{}.npy',
         'results/all_labeled_ensemble/acc_{}_{}_seed_{}_budget_{}.npy',
+        'results/online_bagging/acc_{}_{}_seed_{}_budget_{}.npy',
         'results/random/acc_{}_{}_seed_{}_budget_{}.npy',
         'results/fixed_uncertainty/acc_{}_{}_seed_{}_budget_{}.npy',
         'results/variable_uncertainty/acc_{}_{}_seed_{}_budget_{}.npy',
         'results/variable_randomized_uncertainty/acc_{}_{}_seed_{}_budget_{}.npy',
     ]
-    method_names = ['ours', 'all labeled', 'all labeled OB', 'random', 'fixed uncertainty', 'variable uncertainty']
+    method_names = ['ours', 'all labeled', 'all labeled ensemble', 'all labeled OB', 'random', 'fixed uncertainty', 'variable uncertainty']
 
     table = [column_names]
 

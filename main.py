@@ -26,9 +26,12 @@ def main():
 
     seed_data, seed_target, test_data, test_target, train_stream = utils.data.get_data(
         args.stream_len, args.seed_size, args.random_seed, args.num_classes, args.test_size)
-    if args.method == 'all_labeled_ensemble':
+    if args.method == 'online_bagging':
         base_model = get_base_model(args)
         model = OnlineBagging(base_estimator=base_model, n_estimators=args.num_classifiers)
+    elif args.method == 'all_labeled_ensemble':
+        models = [get_base_model(args) for _ in range(args.num_classifiers)]
+        model = utils.ensemble.Ensemble(models, diversify=True)
     elif args.method == 'ours':
         models = [get_base_model(args) for _ in range(args.num_classifiers)]
         model = utils.ensemble.Ensemble(models, diversify=True)
@@ -56,8 +59,8 @@ def parse_args():
     parser.add_argument('--num_classes', type=int, default=3)
     parser.add_argument('--budget', type=float, default=0.3)
 
-    parser.add_argument('--method', choices=('ours', 'all_labeled',
-                        'all_labeled_ensemble', 'random', 'fixed_uncertainty', 'variable_uncertainty'), default='ours')
+    parser.add_argument('--method', choices=('ours', 'all_labeled', 'all_labeled_ensemble', 'online_bagging',
+                        'random', 'fixed_uncertainty', 'variable_uncertainty'), default='ours')
     parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
     parser.add_argument('--ensemble_diversify', action='store_true')
@@ -116,7 +119,7 @@ def stream_learning(train_stream, seed_data, seed_target, test_data, test_target
         acc = accuracy_score(test_target, test_pred)
         acc_list.append(acc)
 
-        if args.method in ('all_labeled', 'all_labeled_ensemble'):
+        if args.method in ('all_labeled', 'all_labeled_ensemble', 'online_bagging'):
             model.partial_fit(obj, target)
         elif args.method in ('random', 'fixed_uncertainty', 'variable_uncertainty', 'variable_randomized_uncertainty') and current_budget > 0:
             if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
