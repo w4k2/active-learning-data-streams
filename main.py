@@ -29,7 +29,7 @@ def main():
     if args.method == 'online_bagging':
         base_model = get_base_model(args)
         model = OnlineBagging(base_estimator=base_model, n_estimators=args.num_classifiers)
-    elif args.method in ('all_labeled_ensemble', 'ours', 'vote_entropy'):
+    elif args.method in ('all_labeled_ensemble', 'ours', 'vote_entropy', 'consensus_entropy', 'max_disagreement'):
         models = [get_base_model(args) for _ in range(args.num_classifiers)]
         model = utils.ensemble.Ensemble(models, diversify=True)
     else:
@@ -57,7 +57,7 @@ def parse_args():
     parser.add_argument('--budget', type=float, default=0.3)
 
     parser.add_argument('--method', choices=('ours', 'all_labeled', 'all_labeled_ensemble', 'online_bagging',
-                        'random', 'fixed_uncertainty', 'variable_uncertainty', 'vote_entropy'), default='ours')
+                        'random', 'fixed_uncertainty', 'variable_uncertainty', 'vote_entropy', 'consensus_entropy', 'max_disagreement'), default='ours')
     parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
     parser.add_argument('--ensemble_diversify', action='store_true')
@@ -110,6 +110,10 @@ def stream_learning(train_stream, seed_data, seed_target, test_data, test_target
             model, args.prediction_threshold)
     elif args.method == 'vote_entropy':
         strategy = active_learning_strategies.VoteEntropy(model, args.prediction_threshold)
+    elif args.method == 'consensus_entropy':
+        strategy = active_learning_strategies.ConsensusEntropy(model, args.prediction_threshold)
+    elif args.method == 'max_disagreement':
+        strategy = active_learning_strategies.MaxDisagreement(model, args.prediction_threshold)
 
     train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
 

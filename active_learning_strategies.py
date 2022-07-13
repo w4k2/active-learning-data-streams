@@ -2,6 +2,8 @@ import scipy.stats
 import abc
 import numpy as np
 
+import utils.ensemble
+
 
 class ActiveLearningStrategy(abc.ABC):
     def __init__(self, model):
@@ -54,16 +56,47 @@ class VariableUncertainty(ActiveLearningStrategy):
 
 class VoteEntropy(ActiveLearningStrategy):
     def __init__(self, model, threshold):
+        assert type(model) == utils.ensemble.Ensemble, "Vote entropy must use ensemble model"
+        super().__init__(model)
+        self.threshold = threshold
+        self.num_classifiers = len(model.models)
+
+    def request_label(self, obj, current_budget, budget):
+        pred_separate = self.model.predict_proba_separate(obj)
+        idx = np.argmax(pred_separate, axis=2).reshape(self.num_classifiers, 1, 1)
+        pred_probs = np.take_along_axis(pred_separate, idx, axis=2)
+        vote_entropy = scipy.stats.entropy(pred_probs.flatten())
+        if vote_entropy > self.threshold:
+            return True
+        else:
+            return False
+
+
+class ConsensusEntropy(ActiveLearningStrategy):
+    def __init__(self, model, threshold):
         super().__init__(model)
         self.threshold = threshold
 
     def request_label(self, obj, current_budget, budget):
-        pred_separate = self.model.predict_proba_separate(obj)
-        num_classifiers = pred_separate.shape[0]
-        idx = np.argmax(pred_separate, axis=2).reshape(num_classifiers, 1, 1)
-        pred_probs = np.take_along_axis(pred_separate, idx, axis=2)
-        vote_entropy = scipy.stats.entropy(pred_probs.flatten())
-        if vote_entropy > self.threshold:
+        pred_prob = self.model.predict_proba(obj)
+        entropy = scipy.stats.entropy(pred_prob, axis=1)
+        if entropy > self.threshold:
+            return True
+        else:
+            return False
+
+
+class MaxDisagreement(ActiveLearningStrategy):
+    def __init__(self, model, threshold):
+        super().__init__(model)
+        self.threshold = threshold
+
+    def request_label(self, obj, current_budget, budget):
+        pred_prob = self.model.predict_proba_separate(obj)
+        pred_prob_consensus = np.mean(pred_prob, axis=0, keepdims=False)
+        classifers_KL_divergence = [scipy.stats.entropy(pred_prob[i], qk=pred_prob_consensus, axis=1) for i in range(len(pred_prob))]
+        max_kl_divergence = np.max(classifers_KL_divergence)
+        if max_kl_divergence > self.threshold:
             return True
         else:
             return False
