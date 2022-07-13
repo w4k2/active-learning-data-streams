@@ -56,8 +56,11 @@ def parse_args():
     parser.add_argument('--num_classes', type=int, default=3)
     parser.add_argument('--budget', type=float, default=0.3)
 
-    parser.add_argument('--method', choices=('ours', 'all_labeled', 'all_labeled_ensemble', 'online_bagging',
-                        'random', 'fixed_uncertainty', 'variable_uncertainty', 'vote_entropy', 'consensus_entropy', 'max_disagreement'), default='ours')
+    parser.add_argument('--method', choices=(
+                        'ours', 'all_labeled', 'all_labeled_ensemble', 'online_bagging',
+                        'random', 'fixed_uncertainty', 'variable_uncertainty', 'classification_margin',
+                        'vote_entropy', 'consensus_entropy', 'max_disagreement'),
+                        default='ours')
     parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
     parser.add_argument('--ensemble_diversify', action='store_true')
@@ -108,6 +111,8 @@ def stream_learning(train_stream, seed_data, seed_target, test_data, test_target
     elif args.method == 'variable_uncertainty':
         strategy = active_learning_strategies.VariableUncertainty(
             model, args.prediction_threshold)
+    elif args.method == 'classification_margin':
+        strategy = active_learning_strategies.ClassificationMargin(model, args.prediction_threshold)
     elif args.method == 'vote_entropy':
         strategy = active_learning_strategies.VoteEntropy(model, args.prediction_threshold)
     elif args.method == 'consensus_entropy':

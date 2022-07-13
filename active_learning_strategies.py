@@ -54,6 +54,21 @@ class VariableUncertainty(ActiveLearningStrategy):
             return False
 
 
+class ClassificationMargin(ActiveLearningStrategy):
+    def __init__(self, model, threshold):
+        super().__init__(model)
+        self.threshold = threshold
+
+    def request_label(self, obj, current_budget, budget):
+        pred_probs = self.model.predict_proba(obj)
+        partition = np.partition(-pred_probs, 1, axis=1)
+        margin = - partition[:, 0] + partition[:, 1]
+        if margin < self.threshold:
+            return True
+        else:
+            return False
+
+
 class VoteEntropy(ActiveLearningStrategy):
     def __init__(self, model, threshold):
         assert type(model) == utils.ensemble.Ensemble, "Vote entropy must use ensemble model"

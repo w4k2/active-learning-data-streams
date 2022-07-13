@@ -19,12 +19,13 @@ def plot_model(args):
         'results/random/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/fixed_uncertainty/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/variable_uncertainty/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/classification_margin/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/vote_entropy/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/consensus_entropy/{}_{}_{}_seed_{}_budget_{}.npy',
         'results/max_disagreement/{}_{}_{}_seed_{}_budget_{}.npy',
     ]
     plot_labels = ['ours', 'all labeled', 'all labeled ensemble', 'online bagging',
-                   'random', 'fixed_uncertainty', 'variable_uncertainty', 
+                   'random', 'fixed_uncertainty', 'variable_uncertainty', 'classification_margin',
                    'vote_entropy', 'consensus_entropy', 'max_disagreement']
 
     for i, (filepath, result_label) in enumerate(zip(results, plot_labels)):
