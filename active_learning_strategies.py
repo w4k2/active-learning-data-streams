@@ -1,3 +1,4 @@
+import scipy.stats
 import abc
 import numpy as np
 
@@ -48,4 +49,21 @@ class VariableUncertainty(ActiveLearningStrategy):
             return True
         else:
             self.threshold = self.threshold * (1 + self.adjusting_step)
+            return False
+
+
+class VoteEntropy(ActiveLearningStrategy):
+    def __init__(self, model, threshold):
+        super().__init__(model)
+        self.threshold = threshold
+
+    def request_label(self, obj, current_budget, budget):
+        pred_separate = self.model.predict_proba_separate(obj)
+        num_classifiers = pred_separate.shape[0]
+        idx = np.argmax(pred_separate, axis=2).reshape(num_classifiers, 1, 1)
+        pred_probs = np.take_along_axis(pred_separate, idx, axis=2)
+        vote_entropy = scipy.stats.entropy(pred_probs.flatten())
+        if vote_entropy > self.threshold:
+            return True
+        else:
             return False

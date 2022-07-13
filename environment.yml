@@ -12,8 +12,6 @@ dependencies:
   - pandas
   - autopep8
   - pytorch
-  - river
   - tabulate
   - pip:
-    - stream-learn
     - imbalanced-learn

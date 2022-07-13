@@ -48,6 +48,9 @@ class Ensemble:
         return pred_avrg
 
     def predict_proba_separate(self, data):
+        """
+        returns array with shape [num_classifiers, num_samples, num_classes]
+        """
         predictions = []
         for model in self.models:
             pred = model.predict_proba(data)

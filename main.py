@@ -29,10 +29,7 @@ def main():
     if args.method == 'online_bagging':
         base_model = get_base_model(args)
         model = OnlineBagging(base_estimator=base_model, n_estimators=args.num_classifiers)
-    elif args.method == 'all_labeled_ensemble':
-        models = [get_base_model(args) for _ in range(args.num_classifiers)]
-        model = utils.ensemble.Ensemble(models, diversify=True)
-    elif args.method == 'ours':
+    elif args.method in ('all_labeled_ensemble', 'ours', 'vote_entropy'):
         models = [get_base_model(args) for _ in range(args.num_classifiers)]
         model = utils.ensemble.Ensemble(models, diversify=True)
     else:
@@ -60,7 +57,7 @@ def parse_args():
     parser.add_argument('--budget', type=float, default=0.3)
 
     parser.add_argument('--method', choices=('ours', 'all_labeled', 'all_labeled_ensemble', 'online_bagging',
-                        'random', 'fixed_uncertainty', 'variable_uncertainty'), default='ours')
+                        'random', 'fixed_uncertainty', 'variable_uncertainty', 'vote_entropy'), default='ours')
     parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
     parser.add_argument('--ensemble_diversify', action='store_true')
@@ -111,6 +108,8 @@ def stream_learning(train_stream, seed_data, seed_target, test_data, test_target
     elif args.method == 'variable_uncertainty':
         strategy = active_learning_strategies.VariableUncertainty(
             model, args.prediction_threshold)
+    elif args.method == 'vote_entropy':
+        strategy = active_learning_strategies.VoteEntropy(model, args.prediction_threshold)
 
     train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
 
@@ -121,10 +120,6 @@ def stream_learning(train_stream, seed_data, seed_target, test_data, test_target
 
         if args.method in ('all_labeled', 'all_labeled_ensemble', 'online_bagging'):
             model.partial_fit(obj, target)
-        elif args.method in ('random', 'fixed_uncertainty', 'variable_uncertainty', 'variable_randomized_uncertainty') and current_budget > 0:
-            if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
-                model.partial_fit(obj, target)
-                current_budget -= 1
         elif args.method in ('ours', ):
             if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
                 model.partial_fit(obj, target)
@@ -135,6 +130,10 @@ def stream_learning(train_stream, seed_data, seed_target, test_data, test_target
                 train, label, train_kwargs = strategy.use_self_labeling(obj, current_budget, args.budget)
                 if train:
                     model.partial_fit(obj, label, **train_kwargs)
+        else:  # active learning strategy
+            if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
+                model.partial_fit(obj, target)
+                current_budget -= 1
 
         if current_budget == 0:
             current_budget = -1
