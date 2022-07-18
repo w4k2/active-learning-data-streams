@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import utils.data
+import data.load_data
 from main import parse_args
 
 
@@ -9,7 +9,7 @@ def main():
     np.random.seed(42)
     args = parse_args()
 
-    _, _, train_stream, _, _ = utils.data.get_data(args.stream_len, args.seed_size, args.random_seed)
+    _, _, train_stream, _, _ = data.load_data.get_data(args.stream_len, args.seed_size, args.random_seed)
 
     stream_labels = list(zip(*train_stream))[1]
     stream_labels = np.array(stream_labels)

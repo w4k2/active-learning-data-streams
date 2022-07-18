@@ -36,26 +36,33 @@ def main():
 
 def generate_table(paramters_to_load, column_names):
     results = [
-        'results/ours/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/all_labeled/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/all_labeled_ensemble/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/online_bagging/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/random/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/fixed_uncertainty/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/variable_uncertainty/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/variable_randomized_uncertainty/acc_{}_{}_seed_{}_budget_{}.npy',
+        'results/ours/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/all_labeled/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/all_labeled_ensemble/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/online_bagging/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/random/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/fixed_uncertainty/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/variable_uncertainty/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/classification_margin/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/vote_entropy/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/consensus_entropy/{}_{}_{}_seed_{}_budget_{}.npy',
+        'results/max_disagreement/{}_{}_{}_seed_{}_budget_{}.npy',
     ]
-    method_names = ['ours', 'all labeled', 'all labeled ensemble', 'all labeled OB', 'random', 'fixed uncertainty', 'variable uncertainty']
+    method_names = [
+        'ours', 'all labeled', 'all labeled ensemble', 'online bagging',
+        'random', 'fixed_uncertainty', 'variable_uncertainty', 'classification_margin',
+        'vote_entropy', 'consensus_entropy', 'max_disagreement'
+    ]
 
     table = [column_names]
 
     for filepath, method_name in zip(results, method_names):
         table.append([method_name])
         for params in paramters_to_load:
-            acc = np.load(filepath.format(*params))
-            avrg_acc = np.mean(acc)
-            avrg_acc = '{:.4f}'.format(avrg_acc)
-            table[-1].append(avrg_acc)
+            acc_training = np.load(filepath.format(*params))
+            acc_final = acc_training[-1]
+            acc_final = '{:.4f}'.format(acc_final)
+            table[-1].append(acc_final)
 
     return table
 

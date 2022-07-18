@@ -1,3 +1,4 @@
+import sklearn.preprocessing
 import argparse
 import math
 import os
@@ -13,7 +14,7 @@ from sklearn.neural_network import MLPClassifier
 import active_learning_strategies
 import self_labeling_strategies
 import utils.ensemble
-import utils.data
+import data.load_data
 import utils.diversity
 import utils.mlp_pytorch
 import utils.new_model
@@ -24,8 +25,8 @@ def main():
     args = parse_args()
     seed_everything(args.random_seed)
 
-    seed_data, seed_target, test_data, test_target, train_stream = utils.data.get_data(
-        args.stream_len, args.seed_size, args.random_seed, args.num_classes, args.test_size)
+    seed_data, seed_target, test_data, test_target, train_stream, num_classes = data.load_data.get_data(
+        args.dataset_name, args.seed_size, args.test_size, args.random_seed)
     if args.method == 'online_bagging':
         base_model = get_base_model(args)
         model = OnlineBagging(base_estimator=base_model, n_estimators=args.num_classifiers)
@@ -34,13 +35,12 @@ def main():
         model = utils.ensemble.Ensemble(models, diversify=True)
     else:
         model = get_base_model(args)
-    model.fit(seed_data, seed_target)
 
-    acc, budget_end = stream_learning(
-        train_stream, seed_data, seed_target, test_data, test_target, model, args)
+    acc, budget_end = training(
+        train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes)
 
     os.makedirs(f'results/{args.method}', exist_ok=True)
-    experiment_parameters = f'{args.base_model}_{args.stream_len}_seed_{args.seed_size}_budget_{args.budget}'
+    experiment_parameters = f'{args.base_model}_{args.dataset_name}_seed_{args.seed_size}_budget_{args.budget}'
     np.save(f'results/{args.method}/acc_{experiment_parameters}.npy', acc)
     np.save(
         f'results/{args.method}/budget_end_{experiment_parameters}.npy', budget_end)
@@ -49,11 +49,10 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--stream_len', type=int, default=5000)
+    parser.add_argument('--dataset_name', choices=('accelerometer',), required=True)
     parser.add_argument('--seed_size', type=int, default=200, help='seed size for model training')
     parser.add_argument('--test_size', type=float, default=0.2)
     parser.add_argument('--random_seed', type=int, default=42)
-    parser.add_argument('--num_classes', type=int, default=3)
     parser.add_argument('--budget', type=float, default=0.3)
 
     parser.add_argument('--method', choices=(
@@ -96,13 +95,18 @@ def get_base_model(args):
     return model
 
 
-def stream_learning(train_stream, seed_data, seed_target, test_data, test_target, model, args):
+def training(train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes):
+    scaler = sklearn.preprocessing.StandardScaler()
+    seed_transformed = scaler.fit_transform(seed_data)
+    model.fit(seed_transformed, seed_target)
+    test_data = scaler.transform(test_data)
+
     acc_list = list()
     budget_end = -1
     current_budget = math.floor(len(train_stream) * args.budget)
 
     if args.method == 'ours':
-        strategy = self_labeling_strategies.Ours(model, args.num_classes, args.prediction_threshold)
+        strategy = self_labeling_strategies.Ours(model, num_classes, args.prediction_threshold)
     elif args.method == 'random':
         strategy = active_learning_strategies.RandomSampling(model)
     elif args.method == 'fixed_uncertainty':
@@ -126,6 +130,8 @@ def stream_learning(train_stream, seed_data, seed_target, test_data, test_target
         test_pred = model.predict(test_data)
         acc = accuracy_score(test_target, test_pred)
         acc_list.append(acc)
+        obj = np.expand_dims(obj, 0)
+        obj = scaler.transform(obj)
 
         if args.method in ('all_labeled', 'all_labeled_ensemble', 'online_bagging'):
             model.partial_fit(obj, target)
@@ -150,6 +156,7 @@ def stream_learning(train_stream, seed_data, seed_target, test_data, test_target
             print(f'budget ended at {i}')
 
     print(f'budget after training = {current_budget}')
+    print(f'final acc = {acc_list[-1]}')
     return acc_list, budget_end
 
 
