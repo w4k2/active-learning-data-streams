@@ -1,49 +1,88 @@
-import numpy as np
 import csv
+
+import numpy as np
+import pandas
+import sklearn.compose
+import sklearn.impute
 import sklearn.model_selection
+import sklearn.pipeline
+import sklearn.preprocessing
 
 
-def get_data(dataset_name, seed_size, test_size, random_seed):
-    X, y, num_classes = load_dataset(dataset_name)
+def get_data(dataset_name, seed_size, random_seed):
+    X_train, X_test, y_train, y_test, num_classes = load_dataset(dataset_name, random_seed)
 
-    X, seed_data, y, seed_target = sklearn.model_selection.train_test_split(X, y, test_size=seed_size, random_state=random_seed)
-    X_train, test_data, y_train, test_target = sklearn.model_selection.train_test_split(X, y, test_size=test_size, random_state=random_seed)
+    X_train, X_seed, y_train, y_seed = sklearn.model_selection.train_test_split(X_train, y_train, test_size=seed_size, random_state=random_seed)
     stream = list(zip(X_train, y_train))
-    return seed_data, seed_target, test_data, test_target, stream, num_classes
+    return X_seed, y_seed, X_test, y_test, stream, num_classes
 
 
-def load_dataset(dataset_name):
+def load_dataset(dataset_name, random_seed):
     if dataset_name == 'accelerometer':
-        data = []
-        labels = []
-        with open('data/accelerometer.csv', 'r') as f:
-            reader = csv.reader(f)
-            for i, line in enumerate(reader):
-                if i == 0:
-                    continue
-                labels.append(float(line[0]))
-                data.append([float(e) for e in line[1:]])
+        return load_accelerometer(random_seed)
+    elif dataset_name == 'adult':
+        return load_adult()
 
-        data = np.array(data)
-        labels = np.array(labels).reshape(-1, 1)
-        labels -= 1
 
-        random_idxs = np.arange(len(data))
-        np.random.shuffle(random_idxs)
+def load_accelerometer(random_seed):
+    X = []
+    y = []
+    with open('X/accelerometer.csv', 'r') as f:
+        reader = csv.reader(f)
+        for i, line in enumerate(reader):
+            if i == 0:
+                continue
+            y.append(float(line[0]))
+            X.append([float(e) for e in line[1:]])
 
-        data = data[random_idxs]
-        labels = labels[random_idxs]
+    X = np.array(X)
+    y = np.array(y).reshape(-1, 1)
+    y -= 1
 
-        data = data[:5000]
-        labels = labels[:5000]
+    random_idxs = np.arange(len(X))
+    np.random.shuffle(random_idxs)
 
-        num_classes = 3
+    X = X[random_idxs]
+    y = y[random_idxs]
 
-    # print(data)
-    # print(labels)
-    # print(data.shape)
-    # print(labels.shape)
-    # print(np.unique(labels, return_counts=True))
-    # exit()
+    X = X[:5000]
+    y = y[:5000]
 
-    return data, labels, num_classes
+    num_classes = 3
+
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.2, random_state=random_seed)
+
+    return X_train, X_test, y_train, y_test, num_classes
+
+
+def load_adult():
+    column_names = ['age', 'workclass', 'fnlwgt', 'education', 'education-num',
+                    'marital-status', 'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country', 'earnings']
+    train_dataframe = pandas.read_csv('data/adult.data', header=None, names=column_names)
+    test_dataframe = pandas.read_csv('data/adult.test', header=None, names=column_names, skiprows=1)
+
+    numeric_features = ['age', 'fnlwgt', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week']
+    numeric_transformer = sklearn.pipeline.Pipeline(
+        steps=[("imputer", sklearn.impute.SimpleImputer(strategy="median")), ("scaler", sklearn.preprocessing.StandardScaler())]
+    )
+
+    categorical_features = ['workclass', 'education', 'marital-status', 'occupation', 'relationship', 'race', 'sex', 'native-country']
+    categorical_transformer = sklearn.preprocessing.OneHotEncoder(handle_unknown="ignore")
+
+    preprocessor = sklearn.compose.ColumnTransformer(
+        transformers=[
+            ("num", numeric_transformer, numeric_features),
+            ("cat", categorical_transformer, categorical_features),
+        ],
+        sparse_threshold=0
+    )
+
+    train_data = preprocessor.fit_transform(train_dataframe)
+    X_train = train_data[:, :-1]
+    y_train = train_data[:, -1]
+    test_data = preprocessor.transform(test_dataframe)
+    X_test = test_data[:, :-1]
+    y_test = test_data[:, -1]
+    num_classes = 2
+
+    return X_train, X_test, y_train, y_test, num_classes

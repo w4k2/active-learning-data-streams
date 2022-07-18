@@ -26,7 +26,7 @@ def main():
     seed_everything(args.random_seed)
 
     seed_data, seed_target, test_data, test_target, train_stream, num_classes = data.load_data.get_data(
-        args.dataset_name, args.seed_size, args.test_size, args.random_seed)
+        args.dataset_name, args.seed_size, args.random_seed)
     if args.method == 'online_bagging':
         base_model = get_base_model(args)
         model = OnlineBagging(base_estimator=base_model, n_estimators=args.num_classifiers)
@@ -49,9 +49,8 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dataset_name', choices=('accelerometer',), required=True)
+    parser.add_argument('--dataset_name', choices=('accelerometer', 'adult'), required=True)
     parser.add_argument('--seed_size', type=int, default=200, help='seed size for model training')
-    parser.add_argument('--test_size', type=float, default=0.2)
     parser.add_argument('--random_seed', type=int, default=42)
     parser.add_argument('--budget', type=float, default=0.3)
 
@@ -129,6 +128,7 @@ def training(train_stream, seed_data, seed_target, test_data, test_target, model
     for i, (obj, target) in enumerate(train_stream):
         test_pred = model.predict(test_data)
         acc = accuracy_score(test_target, test_pred)
+        print(acc)
         acc_list.append(acc)
         obj = np.expand_dims(obj, 0)
         obj = scaler.transform(obj)
