@@ -95,10 +95,7 @@ def get_base_model(args):
 
 
 def training(train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes):
-    scaler = sklearn.preprocessing.StandardScaler()
-    seed_transformed = scaler.fit_transform(seed_data)
-    model.fit(seed_transformed, seed_target)
-    test_data = scaler.transform(test_data)
+    model.fit(seed_data, seed_target)
 
     acc_list = list()
     budget_end = -1
@@ -128,10 +125,9 @@ def training(train_stream, seed_data, seed_target, test_data, test_target, model
     for i, (obj, target) in enumerate(train_stream):
         test_pred = model.predict(test_data)
         acc = accuracy_score(test_target, test_pred)
-        print(acc)
+        # print(acc)
         acc_list.append(acc)
         obj = np.expand_dims(obj, 0)
-        obj = scaler.transform(obj)
 
         if args.method in ('all_labeled', 'all_labeled_ensemble', 'online_bagging'):
             model.partial_fit(obj, target)

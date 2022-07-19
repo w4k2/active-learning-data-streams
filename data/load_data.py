@@ -10,10 +10,14 @@ import sklearn.preprocessing
 
 
 def get_data(dataset_name, seed_size, random_seed):
-    X_train, X_test, y_train, y_test, num_classes = load_dataset(dataset_name, random_seed)
+    X_train, X_test, y_train, y_test, num_classes, preprocessor = load_dataset(dataset_name, random_seed)
+    X_stream, X_seed, y_stream, y_seed = sklearn.model_selection.train_test_split(X_train, y_train, test_size=seed_size, random_state=random_seed)
 
-    X_train, X_seed, y_train, y_seed = sklearn.model_selection.train_test_split(X_train, y_train, test_size=seed_size, random_state=random_seed)
-    stream = list(zip(X_train, y_train))
+    X_seed = preprocessor.fit_transform(X_seed)
+    X_stream = preprocessor.transform(X_stream)
+    X_test = preprocessor.transform(X_test)
+
+    stream = list(zip(X_stream, y_stream))
     return X_seed, y_seed, X_test, y_test, stream, num_classes
 
 
@@ -27,7 +31,7 @@ def load_dataset(dataset_name, random_seed):
 def load_accelerometer(random_seed):
     X = []
     y = []
-    with open('X/accelerometer.csv', 'r') as f:
+    with open('data/accelerometer.csv', 'r') as f:
         reader = csv.reader(f)
         for i, line in enumerate(reader):
             if i == 0:
@@ -49,15 +53,16 @@ def load_accelerometer(random_seed):
     y = y[:5000]
 
     num_classes = 3
-
+    scaler = sklearn.preprocessing.StandardScaler()
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.2, random_state=random_seed)
 
-    return X_train, X_test, y_train, y_test, num_classes
+    return X_train, X_test, y_train, y_test, num_classes, scaler
 
 
 def load_adult():
     column_names = ['age', 'workclass', 'fnlwgt', 'education', 'education-num',
-                    'marital-status', 'occupation', 'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country', 'earnings']
+                    'marital-status', 'occupation', 'relationship', 'race', 'sex',
+                    'capital-gain', 'capital-loss', 'hours-per-week', 'native-country', 'earnings']
     train_dataframe = pandas.read_csv('data/adult.data', header=None, names=column_names)
     test_dataframe = pandas.read_csv('data/adult.test', header=None, names=column_names, skiprows=1)
 
@@ -77,12 +82,15 @@ def load_adult():
         sparse_threshold=0
     )
 
-    train_data = preprocessor.fit_transform(train_dataframe)
-    X_train = train_data[:, :-1]
-    y_train = train_data[:, -1]
-    test_data = preprocessor.transform(test_dataframe)
-    X_test = test_data[:, :-1]
-    y_test = test_data[:, -1]
+    X_train = train_dataframe.loc[:, train_dataframe.columns != 'earnings']
+    y_train = train_dataframe.loc[:, train_dataframe.columns == 'earnings']
+    y_train = y_train.replace([' <=50K', ' >50K'], [0, 1])
+    y_train = y_train.to_numpy().reshape(-1, 1)
+    X_test = test_dataframe.loc[:, test_dataframe.columns != 'earnings']
+    y_test = test_dataframe.loc[:, test_dataframe.columns == 'earnings']
+    y_test = y_test.replace([' <=50K.', ' >50K.'], [0, 1])
+    y_test = y_test.to_numpy().reshape(-1, 1)
+
     num_classes = 2
 
-    return X_train, X_test, y_train, y_test, num_classes
+    return X_train, X_test, y_train, y_test, num_classes, preprocessor
