@@ -28,6 +28,8 @@ def load_dataset(dataset_name, random_seed):
         return load_adult()
     elif dataset_name == 'bank_marketing':
         return load_bank()
+    elif dataset_name == 'firewall':
+        return load_firewall()
 
 
 def load_accelerometer(random_seed):
@@ -115,6 +117,24 @@ def load_bank():
     X = df.loc[:, df.columns != 'y']
     y = df.loc[:, 'y']
     y = y.replace(['no', 'yes'], [0, 1])
+    y = y.to_numpy().reshape(-1, 1)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y)
+    num_classes = 2
+
+    return X_train, X_test, y_train, y_test, num_classes, preprocessor
+
+
+def load_firewall():
+    df = pandas.read_csv('data/firewall/log2.csv')
+
+    numeric_features = ['Source Port', 'Destination Port', 'NAT Source Port', 'NAT Destination Port',
+                        'Bytes', 'Bytes Sent', 'Bytes Received', 'Packets', 'Elapsed Time (sec)', 'pkts_sent', 'pkts_received']
+    categorical_features = []
+    preprocessor = get_preprocessor(numeric_features, categorical_features)
+
+    X = df.loc[:, df.columns != 'Action']
+    y = df.loc[:, 'Action']
+    y = y.replace(['allow', 'deny', 'drop', 'reset-both'], [0, 1, 2, 3])
     y = y.to_numpy().reshape(-1, 1)
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y)
     num_classes = 2

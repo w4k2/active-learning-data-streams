@@ -49,7 +49,7 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dataset_name', choices=('accelerometer', 'adult', 'bank_marketing', ), required=True)
+    parser.add_argument('--dataset_name', choices=('accelerometer', 'adult', 'bank_marketing', 'firewall', ), required=True)
     parser.add_argument('--seed_size', type=int, default=200, help='seed size for model training')
     parser.add_argument('--random_seed', type=int, default=42)
     parser.add_argument('--budget', type=float, default=0.3)
@@ -96,6 +96,9 @@ def get_base_model(args):
 
 def training(train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes):
     model.fit(seed_data, seed_target)
+    test_pred = model.predict(test_data)
+    acc = accuracy_score(test_target, test_pred)
+    print(f'accuracy after training with seed = {acc}')
 
     acc_list = list()
     budget_end = -1
