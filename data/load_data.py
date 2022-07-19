@@ -26,6 +26,8 @@ def load_dataset(dataset_name, random_seed):
         return load_accelerometer(random_seed)
     elif dataset_name == 'adult':
         return load_adult()
+    elif dataset_name == 'bank_marketing':
+        return load_bank()
 
 
 def load_accelerometer(random_seed):
@@ -67,20 +69,8 @@ def load_adult():
     test_dataframe = pandas.read_csv('data/adult/adult.test', header=None, names=column_names, skiprows=1)
 
     numeric_features = ['age', 'fnlwgt', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week']
-    numeric_transformer = sklearn.pipeline.Pipeline(
-        steps=[("imputer", sklearn.impute.SimpleImputer(strategy="median")), ("scaler", sklearn.preprocessing.StandardScaler())]
-    )
-
     categorical_features = ['workclass', 'education', 'marital-status', 'occupation', 'relationship', 'race', 'sex', 'native-country']
-    categorical_transformer = sklearn.preprocessing.OneHotEncoder(handle_unknown="ignore")
-
-    preprocessor = sklearn.compose.ColumnTransformer(
-        transformers=[
-            ("num", numeric_transformer, numeric_features),
-            ("cat", categorical_transformer, categorical_features),
-        ],
-        sparse_threshold=0
-    )
+    preprocessor = get_preprocessor(numeric_features, categorical_features)
 
     X_train = train_dataframe.loc[:, train_dataframe.columns != 'earnings']
     y_train = train_dataframe.loc[:, train_dataframe.columns == 'earnings']
@@ -91,6 +81,42 @@ def load_adult():
     y_test = y_test.replace([' <=50K.', ' >50K.'], [0, 1])
     y_test = y_test.to_numpy().reshape(-1, 1)
 
+    num_classes = 2
+
+    return X_train, X_test, y_train, y_test, num_classes, preprocessor
+
+
+def get_preprocessor(numeric_features, categorical_features):
+    numeric_transformer = sklearn.pipeline.Pipeline(
+        steps=[("imputer", sklearn.impute.SimpleImputer(strategy="median")), ("scaler", sklearn.preprocessing.StandardScaler())]
+    )
+
+    categorical_transformer = sklearn.preprocessing.OneHotEncoder(handle_unknown="ignore")
+
+    preprocessor = sklearn.compose.ColumnTransformer(
+        transformers=[
+            ("num", numeric_transformer, numeric_features),
+            ("cat", categorical_transformer, categorical_features),
+        ],
+        sparse_threshold=0
+    )
+
+    return preprocessor
+
+
+def load_bank():
+    df = pandas.read_csv('data/bank_marketing/bank-full.csv', delimiter=';')
+    print(df)
+
+    numeric_features = ['age', 'duration', 'campaign', 'pdays', 'previous']
+    categorical_features = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month', 'poutcome', ]
+    preprocessor = get_preprocessor(numeric_features, categorical_features)
+
+    X = df.loc[:, df.columns != 'y']
+    y = df.loc[:, 'y']
+    y = y.replace(['no', 'yes'], [0, 1])
+    y = y.to_numpy().reshape(-1, 1)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y)
     num_classes = 2
 
     return X_train, X_test, y_train, y_test, num_classes, preprocessor
