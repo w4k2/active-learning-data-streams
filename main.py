@@ -1,4 +1,3 @@
-import sklearn.preprocessing
 import argparse
 import math
 import os
@@ -7,7 +6,7 @@ import torch
 import random
 import numpy as np
 
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import balanced_accuracy_score
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 
@@ -97,7 +96,7 @@ def get_base_model(args):
 def training(train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes):
     model.fit(seed_data, seed_target)
     test_pred = model.predict(test_data)
-    acc = accuracy_score(test_target, test_pred)
+    acc = balanced_accuracy_score(test_target, test_pred)
     print(f'accuracy after training with seed = {acc}')
 
     acc_list = list()
@@ -127,7 +126,7 @@ def training(train_stream, seed_data, seed_target, test_data, test_target, model
 
     for i, (obj, target) in enumerate(train_stream):
         test_pred = model.predict(test_data)
-        acc = accuracy_score(test_target, test_pred)
+        acc = balanced_accuracy_score(test_target, test_pred)
         # print(acc)
         acc_list.append(acc)
         obj = np.expand_dims(obj, 0)
