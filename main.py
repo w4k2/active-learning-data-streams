@@ -49,7 +49,7 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dataset_name', choices=('accelerometer', 'adult', 'bank_marketing', 'firewall', ), required=True)
+    parser.add_argument('--dataset_name', choices=('accelerometer', 'adult', 'bank_marketing', 'firewall', 'chess'), required=True)
     parser.add_argument('--seed_size', type=int, default=200, help='seed size for model training')
     parser.add_argument('--random_seed', type=int, default=42)
     parser.add_argument('--budget', type=float, default=0.3)

@@ -11,7 +11,7 @@ import sklearn.preprocessing
 
 def get_data(dataset_name, seed_size, random_seed):
     X_train, X_test, y_train, y_test, num_classes, preprocessor = load_dataset(dataset_name, random_seed)
-    X_stream, X_seed, y_stream, y_seed = sklearn.model_selection.train_test_split(X_train, y_train, test_size=seed_size, random_state=random_seed)
+    X_stream, X_seed, y_stream, y_seed = sklearn.model_selection.train_test_split(X_train, y_train, test_size=seed_size, random_state=random_seed, stratify=y_train)
 
     X_seed = preprocessor.fit_transform(X_seed)
     X_stream = preprocessor.transform(X_stream)
@@ -27,9 +27,11 @@ def load_dataset(dataset_name, random_seed):
     elif dataset_name == 'adult':
         return load_adult()
     elif dataset_name == 'bank_marketing':
-        return load_bank()
+        return load_bank(random_seed)
     elif dataset_name == 'firewall':
-        return load_firewall()
+        return load_firewall(random_seed)
+    elif dataset_name == 'chess':
+        return load_chess(random_seed)
 
 
 def load_accelerometer(random_seed):
@@ -58,7 +60,7 @@ def load_accelerometer(random_seed):
 
     num_classes = 3
     scaler = sklearn.preprocessing.StandardScaler()
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.2, random_state=random_seed)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=0.2, random_state=random_seed, stratify=y)
 
     return X_train, X_test, y_train, y_test, num_classes, scaler
 
@@ -88,6 +90,61 @@ def load_adult():
     return X_train, X_test, y_train, y_test, num_classes, preprocessor
 
 
+def load_bank(random_seed):
+    df = pandas.read_csv('data/bank_marketing/bank-full.csv', delimiter=';')
+    print(df)
+
+    numeric_features = ['age', 'duration', 'campaign', 'pdays', 'previous']
+    categorical_features = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month', 'poutcome', ]
+    preprocessor = get_preprocessor(numeric_features, categorical_features)
+
+    X = df.loc[:, df.columns != 'y']
+    y = df.loc[:, 'y']
+    y = y.replace(['no', 'yes'], [0, 1])
+    y = y.to_numpy().reshape(-1, 1)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
+    num_classes = 2
+
+    return X_train, X_test, y_train, y_test, num_classes, preprocessor
+
+
+def load_firewall(random_seed):
+    df = pandas.read_csv('data/firewall/log2.csv')
+
+    numeric_features = ['Source Port', 'Destination Port', 'NAT Source Port', 'NAT Destination Port',
+                        'Bytes', 'Bytes Sent', 'Bytes Received', 'Packets', 'Elapsed Time (sec)', 'pkts_sent', 'pkts_received']
+    categorical_features = []
+    preprocessor = get_preprocessor(numeric_features, categorical_features)
+
+    X = df.loc[:, df.columns != 'Action']
+    y = df.loc[:, 'Action']
+    y = y.replace(['allow', 'deny', 'drop', 'reset-both'], [0, 1, 2, 3])
+    y = y.to_numpy().reshape(-1, 1)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
+    num_classes = 4
+
+    return X_train, X_test, y_train, y_test, num_classes, preprocessor
+
+
+def load_chess(random_seed):
+    df = pandas.read_csv('data/chess/krkopt.data', header=None)
+    df = df[df.iloc[:, 6] != 'zero']
+
+    numeric_features = []
+    categorical_features = [0, 1, 2, 3, 4, 5]
+    preprocessor = get_preprocessor(numeric_features, categorical_features)
+
+    X = df.loc[:, df.columns != 6]
+    y = df.loc[:, 6]
+
+    y = y.to_numpy().reshape(-1, 1)
+    y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
+    num_classes = 18
+
+    return X_train, X_test, y_train, y_test, num_classes, preprocessor
+
+
 def get_preprocessor(numeric_features, categorical_features):
     numeric_transformer = sklearn.pipeline.Pipeline(
         steps=[("imputer", sklearn.impute.SimpleImputer(strategy="median")), ("scaler", sklearn.preprocessing.StandardScaler())]
@@ -104,39 +161,3 @@ def get_preprocessor(numeric_features, categorical_features):
     )
 
     return preprocessor
-
-
-def load_bank():
-    df = pandas.read_csv('data/bank_marketing/bank-full.csv', delimiter=';')
-    print(df)
-
-    numeric_features = ['age', 'duration', 'campaign', 'pdays', 'previous']
-    categorical_features = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month', 'poutcome', ]
-    preprocessor = get_preprocessor(numeric_features, categorical_features)
-
-    X = df.loc[:, df.columns != 'y']
-    y = df.loc[:, 'y']
-    y = y.replace(['no', 'yes'], [0, 1])
-    y = y.to_numpy().reshape(-1, 1)
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y)
-    num_classes = 2
-
-    return X_train, X_test, y_train, y_test, num_classes, preprocessor
-
-
-def load_firewall():
-    df = pandas.read_csv('data/firewall/log2.csv')
-
-    numeric_features = ['Source Port', 'Destination Port', 'NAT Source Port', 'NAT Destination Port',
-                        'Bytes', 'Bytes Sent', 'Bytes Received', 'Packets', 'Elapsed Time (sec)', 'pkts_sent', 'pkts_received']
-    categorical_features = []
-    preprocessor = get_preprocessor(numeric_features, categorical_features)
-
-    X = df.loc[:, df.columns != 'Action']
-    y = df.loc[:, 'Action']
-    y = y.replace(['allow', 'deny', 'drop', 'reset-both'], [0, 1, 2, 3])
-    y = y.to_numpy().reshape(-1, 1)
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y)
-    num_classes = 2
-
-    return X_train, X_test, y_train, y_test, num_classes, preprocessor

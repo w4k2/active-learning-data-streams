@@ -16,6 +16,10 @@ mkdir data/bank_marketing
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank.zip -O ./data/bank_marketing/bank.zip
 unzip data/bank_marketing/bank.zip -d data/bank_marketing/
 
-# internet firewall - 4 classes, class counts 37640, 14987, 12851, 54
+# internet firewall - 4 classes, class counts: 37640, 14987, 12851, 54
 mkdir data/firewall
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/00542/log2.csv -O ./data/firewall/log2.csv
+
+# chess - 18 classes, class counts: 2796, 1433, 2854, 2166,  471,  198, 4553, 1712,   78,  683,  592, 390, 1985, 4194,   81, 3597,  246,   27
+mkdir data/chess
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/chess/king-rook-vs-king/krkopt.data -O ./data/chess/krkopt.data
