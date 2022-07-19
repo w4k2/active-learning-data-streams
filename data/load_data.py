@@ -31,7 +31,7 @@ def load_dataset(dataset_name, random_seed):
 def load_accelerometer(random_seed):
     X = []
     y = []
-    with open('data/accelerometer.csv', 'r') as f:
+    with open('data/accelerometer/accelerometer.csv', 'r') as f:
         reader = csv.reader(f)
         for i, line in enumerate(reader):
             if i == 0:
@@ -63,8 +63,8 @@ def load_adult():
     column_names = ['age', 'workclass', 'fnlwgt', 'education', 'education-num',
                     'marital-status', 'occupation', 'relationship', 'race', 'sex',
                     'capital-gain', 'capital-loss', 'hours-per-week', 'native-country', 'earnings']
-    train_dataframe = pandas.read_csv('data/adult.data', header=None, names=column_names)
-    test_dataframe = pandas.read_csv('data/adult.test', header=None, names=column_names, skiprows=1)
+    train_dataframe = pandas.read_csv('data/adult/adult.data', header=None, names=column_names)
+    test_dataframe = pandas.read_csv('data/adult/adult.test', header=None, names=column_names, skiprows=1)
 
     numeric_features = ['age', 'fnlwgt', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week']
     numeric_transformer = sklearn.pipeline.Pipeline(
