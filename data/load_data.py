@@ -38,6 +38,8 @@ def load_dataset(dataset_name, random_seed):
         return load_poker()
     elif dataset_name == 'mushroom':
         return load_mushroom(random_seed)
+    elif dataset_name == 'wine':
+        return load_wine(random_seed)
     else:
         raise ValueError("Invalid dataset name")
 
@@ -220,6 +222,25 @@ def load_mushroom(random_seed):
     y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
     num_classes = 2
+    return X_train, X_test, y_train, y_test, num_classes, preprocessor
+
+
+def load_wine(random_seed):
+    df = pandas.read_csv('data/wine/winequality-white.csv', delimiter=';')
+    df = df[df.loc[:, 'quality'] != 3]
+    df = df[df.loc[:, 'quality'] != 9]
+
+    numeric_features = ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar', 'chlorides', 'free sulfur dioxide', 'total sulfur dioxide', 'density', 'pH', 'sulphates', 'alcohol']
+    categorical_features = []
+    preprocessor = get_preprocessor(numeric_features, categorical_features)
+
+    X = df.loc[:, df.columns != 'quality']
+    y = df.loc[:, 'quality']
+
+    y = y.to_numpy().reshape(-1, 1)
+    y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
+    num_classes = 5
     return X_train, X_test, y_train, y_test, num_classes, preprocessor
 
 

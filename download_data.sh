@@ -39,3 +39,9 @@ wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand.
 mkdir data/mushroom
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data -O data/mushroom/agaricus-lepiota.data
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.names -O data/mushroom/agaricus-lepiota.names
+
+# wine quiaty - 
+mkdir data/wine
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv -O data/wine/winequality-red.csv
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv -O data/wine/winequality-white.csv
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality.names -O data/wine/winequality.names 

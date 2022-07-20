@@ -52,7 +52,7 @@ def parse_args():
     parser.add_argument('--dataset_name', choices=[
         'accelerometer', 'adult', 'bank_marketing',
         'firewall', 'chess', 'nursery',
-        'poker', 'mushroom',
+        'poker', 'mushroom', 'wine',
     ], required=True)
     parser.add_argument('--seed_size', type=int, default=200, help='seed size for model training')
     parser.add_argument('--random_seed', type=int, default=42)
@@ -93,7 +93,7 @@ def get_base_model(args):
         # model = utils.mlp_pytorch.MLPClassifierPytorch(hidden_layer_sizes=(  # TODO why it is working better for pytorch implementation of MLP? it is not the case of changing optimizer between fit and partial fit
         #     100, 100), learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
         model = MLPClassifier(hidden_layer_sizes=(
-            100, 100), learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
+            100, 100), learning_rate_init=0.001, max_iter=1000, beta_1=args.beta1)
     else:
         raise ValueError("Invalid base classifier")
     return model
