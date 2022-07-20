@@ -34,6 +34,8 @@ def load_dataset(dataset_name, random_seed):
         return load_chess(random_seed)
     elif dataset_name == 'nursery':
         return load_nursery(random_seed)
+    elif dataset_name == 'poker':
+        return load_poker()
     else:
         raise ValueError("Invalid dataset name")
 
@@ -150,7 +152,7 @@ def load_chess(random_seed):
 
 
 def load_nursery(random_seed):
-    column_names = ['parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', 'class']
+    column_names = ['parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', 'CLASS']
     df = pandas.read_csv('data/nursery/nursery.data', header=None, names=column_names)
     df = df[df.loc[:, 'class'] != 'recommend']
 
@@ -165,6 +167,45 @@ def load_nursery(random_seed):
     y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
     num_classes = 4
+    return X_train, X_test, y_train, y_test, num_classes, preprocessor
+
+
+def load_poker():
+    column_names = ['S1', 'C1', 'S2', 'C2', 'S3', 'C3', 'S4', 'C4', 'S5', 'C5', 'CLASS']
+    train_df = pandas.read_csv('data/poker/poker-hand-testing.data', header=None, names=column_names)  # for some reason test .data file has much more samples the train
+    train_df = train_df.iloc[:20000, :]
+    test_df = pandas.read_csv('data/poker/poker-hand-training-true.data', header=None, names=column_names)
+    train_df = train_df[train_df.loc[:, 'CLASS'] != 7]
+    train_df = train_df[train_df.loc[:, 'CLASS'] != 8]
+    train_df = train_df[train_df.loc[:, 'CLASS'] != 9]
+    test_df = test_df[test_df.loc[:, 'CLASS'] != 7]
+    test_df = test_df[test_df.loc[:, 'CLASS'] != 8]
+    test_df = test_df[test_df.loc[:, 'CLASS'] != 9]
+
+    numeric_features = ['C1', 'C2', 'C3', 'C4', 'C5']
+    categorical_features = ['S1', 'S2', 'S3', 'S4', 'S5']
+    preprocessor = get_preprocessor(numeric_features, categorical_features)
+
+    X_train = train_df.loc[:, train_df.columns != 'CLASS']
+    y_train = train_df.loc[:, 'CLASS']
+    X_test = test_df.loc[:, test_df.columns != 'CLASS']
+    y_test = test_df.loc[:, 'CLASS']
+
+    y_train = y_train.to_numpy().reshape(-1, 1)
+    y_test = y_test.to_numpy().reshape(-1, 1)
+    class_econder = sklearn.preprocessing.OrdinalEncoder()
+    y_train = class_econder.fit_transform(y_train)
+    y_test = class_econder.transform(y_test)
+
+    # print('X_train.shape = ', X_train.shape)
+    # print('X_test.shape = ', X_test.shape)
+    # print('y_train.shape = ', y_train.shape)
+    # print('y_test.shape = ', y_test.shape)
+    # print(np.unique(y_train, return_counts=True))
+    # print(np.unique(y_test, return_counts=True))
+    # exit()
+
+    num_classes = 10
     return X_train, X_test, y_train, y_test, num_classes, preprocessor
 
 

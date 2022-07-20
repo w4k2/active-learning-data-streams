@@ -24,7 +24,13 @@ wget https://archive.ics.uci.edu/ml/machine-learning-databases/00542/log2.csv -O
 mkdir data/chess
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/chess/king-rook-vs-king/krkopt.data -O ./data/chess/krkopt.data
 
-# nursery - 
+# nursery - 4 classes, class counts: 4320, 328, 4266, 4044
 mkdir data/nursery
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/nursery/nursery.data -O data/nursery/nursery.data
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/nursery/nursery.names -O data/nursery/nursery.names
+
+# poker - 10 classes, class counts: 
+mkdir data/poker
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data -O data/poker/poker-hand-testing.data
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data -O data/poker/poker-hand-training-true.data
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand.names -O data/poker/poker-hand.names

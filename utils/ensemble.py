@@ -1,4 +1,3 @@
-from sklearn.neighbors import NearestNeighbors
 import numpy as np
 
 
@@ -17,6 +16,17 @@ def get_model_dataset(data, target):
     selected_data = np.stack(selected_data, axis=0)
     selected_target = np.stack(selected_target, axis=0)
 
+    all_classes = set(np.unique(target))
+    selected_classes = set(np.unique(selected_target))
+    missing_classes = all_classes - selected_classes
+    for c in missing_classes:
+        class_idx = np.argwhere(target.flatten() == c).flatten()
+        random_idx = np.random.choice(class_idx, 1)
+        extra_sample = data[random_idx].reshape(1, -1)
+        extra_target = target[random_idx].reshape(1, -1)
+        selected_data = np.concatenate([selected_data, extra_sample], axis=0)
+        selected_target = np.concatenate([selected_target, extra_target], axis=0)
+
     return selected_data, selected_target
 
 
@@ -25,15 +35,14 @@ class Ensemble:
         self.models = models
         self.diversify = diversify
         self.seed_data = None
-        self.neighbors = NearestNeighbors(n_neighbors=5)
 
     def fit(self, data, target):
         for model in self.models:
             if self.diversify:
                 train_data, train_target = get_model_dataset(data, target)
+                train_target = np.ravel(train_target)
                 model.fit(train_data, train_target)
                 self.seed_data = train_data
-                self.neighbors.fit(train_data)
             else:
                 model.fit(data, target)
 
@@ -70,19 +79,6 @@ class Ensemble:
                 num_repeats = min(num_repeats, 4)
                 if num_repeats > 0:
                     target = np.ravel(target)
-                    # idx = self.neighbors.kneighbors(data, n_neighbors=num_repeats, return_distance=False)[0]
-                    # nearest = self.seed_data[idx]
-                    # for neighbor in nearest:
-                    #     sample = self._augument_sample(data, neighbor)
-                    #     model.partial_fit(sample, target)
                     model.partial_fit(data, target)
             else:
                 model.partial_fit(data, target)
-
-    def _augument_sample(self, sample, neighbor):
-        vec = neighbor - sample
-        norm = np.linalg.norm(vec)
-        vec_normalized = vec / norm
-        new_len = np.random.rand() * norm
-        new_sample = sample + vec_normalized * new_len
-        return new_sample
