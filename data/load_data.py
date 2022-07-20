@@ -36,6 +36,8 @@ def load_dataset(dataset_name, random_seed):
         return load_nursery(random_seed)
     elif dataset_name == 'poker':
         return load_poker()
+    elif dataset_name == 'mushroom':
+        return load_mushroom(random_seed)
     else:
         raise ValueError("Invalid dataset name")
 
@@ -198,6 +200,26 @@ def load_poker():
     y_test = class_econder.transform(y_test)
 
     num_classes = 10
+    return X_train, X_test, y_train, y_test, num_classes, preprocessor
+
+
+def load_mushroom(random_seed):
+    column_names = ['class', 'cap-shape', 'cap-surface', 'cap-color', 'bruises', 'odor', 'gill-attachment', 'gill-spacing', 'gill-size', 'gill-color', 'stalk-shape', 'stalk-root', 'stalk-surface-above-ring',
+                    'stalk-surface-below-ring', 'stalk-color-above-ring', 'stalk-color-below-ring', 'veil-type', 'veil-color', 'ring-number', 'ring-type', 'spore-print-color', 'population', 'habitat']
+    df = pandas.read_csv('data/mushroom/agaricus-lepiota.data', header=None, names=column_names)
+
+    numeric_features = []
+    categorical_features = ['cap-shape', 'cap-surface', 'cap-color', 'bruises', 'odor', 'gill-attachment', 'gill-spacing', 'gill-size', 'gill-color', 'stalk-shape', 'stalk-root', 'stalk-surface-above-ring',
+                            'stalk-surface-below-ring', 'stalk-color-above-ring', 'stalk-color-below-ring', 'veil-type', 'veil-color', 'ring-number', 'ring-type', 'spore-print-color', 'population', 'habitat']
+    preprocessor = get_preprocessor(numeric_features, categorical_features)
+
+    X = df.loc[:, df.columns != 'class']
+    y = df.loc[:, 'class']
+
+    y = y.to_numpy().reshape(-1, 1)
+    y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
+    num_classes = 2
     return X_train, X_test, y_train, y_test, num_classes, preprocessor
 
 

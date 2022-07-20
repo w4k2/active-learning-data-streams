@@ -34,3 +34,8 @@ mkdir data/poker
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data -O data/poker/poker-hand-testing.data
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data -O data/poker/poker-hand-training-true.data
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand.names -O data/poker/poker-hand.names
+
+# mushroom - 2 classes, class counts: 3156, 2937
+mkdir data/mushroom
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data -O data/mushroom/agaricus-lepiota.data
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.names -O data/mushroom/agaricus-lepiota.names
