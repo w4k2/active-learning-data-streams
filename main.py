@@ -5,6 +5,7 @@ import tqdm
 import torch
 import random
 import numpy as np
+import distutils.util
 
 from sklearn.metrics import balanced_accuracy_score
 from sklearn.naive_bayes import GaussianNB
@@ -62,9 +63,10 @@ def parse_args():
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
     parser.add_argument('--ensemble_diversify', action='store_true')
     parser.add_argument('--num_classifiers', type=int, default=9)
+    parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for Adam optimizer')
 
     parser.add_argument('--debug', action='store_true')
-    parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for Adam optimizer')
+    parser.add_argument('--verbose', type=distutils.util.strtobool, default=True)
 
     args = parser.parse_args()
     return args
@@ -122,7 +124,8 @@ def training(train_stream, seed_data, seed_target, test_data, test_target, model
     elif args.method == 'max_disagreement':
         strategy = active_learning_strategies.MaxDisagreement(model, args.prediction_threshold)
 
-    train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
+    if args.verbose:
+        train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
 
     for i, (obj, target) in enumerate(train_stream):
         test_pred = model.predict(test_data)
