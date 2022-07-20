@@ -23,3 +23,8 @@ wget https://archive.ics.uci.edu/ml/machine-learning-databases/00542/log2.csv -O
 # chess - 18 classes, class counts: 2796, 1433, 2854, 2166,  471,  198, 4553, 1712,   78,  683,  592, 390, 1985, 4194,   81, 3597,  246,   27
 mkdir data/chess
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/chess/king-rook-vs-king/krkopt.data -O ./data/chess/krkopt.data
+
+# nursery - 
+mkdir data/nursery
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/nursery/nursery.data -O data/nursery/nursery.data
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/nursery/nursery.names -O data/nursery/nursery.names

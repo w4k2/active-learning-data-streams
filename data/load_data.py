@@ -32,6 +32,10 @@ def load_dataset(dataset_name, random_seed):
         return load_firewall(random_seed)
     elif dataset_name == 'chess':
         return load_chess(random_seed)
+    elif dataset_name == 'nursery':
+        return load_nursery(random_seed)
+    else:
+        raise ValueError("Invalid dataset name")
 
 
 def load_accelerometer(random_seed):
@@ -140,8 +144,27 @@ def load_chess(random_seed):
     y = y.to_numpy().reshape(-1, 1)
     y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
-    num_classes = 18
+    num_classes = 17
 
+    return X_train, X_test, y_train, y_test, num_classes, preprocessor
+
+
+def load_nursery(random_seed):
+    column_names = ['parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', 'class']
+    df = pandas.read_csv('data/nursery/nursery.data', header=None, names=column_names)
+    df = df[df.loc[:, 'class'] != 'recommend']
+
+    numeric_features = []
+    categorical_features = ['parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', ]
+    preprocessor = get_preprocessor(numeric_features, categorical_features)
+
+    X = df.loc[:, df.columns != 'class']
+    y = df.loc[:, 'class']
+
+    y = y.to_numpy().reshape(-1, 1)
+    y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
+    num_classes = 4
     return X_train, X_test, y_train, y_test, num_classes, preprocessor
 
 
