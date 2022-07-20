@@ -197,14 +197,6 @@ def load_poker():
     y_train = class_econder.fit_transform(y_train)
     y_test = class_econder.transform(y_test)
 
-    # print('X_train.shape = ', X_train.shape)
-    # print('X_test.shape = ', X_test.shape)
-    # print('y_train.shape = ', y_train.shape)
-    # print('y_test.shape = ', y_test.shape)
-    # print(np.unique(y_train, return_counts=True))
-    # print(np.unique(y_test, return_counts=True))
-    # exit()
-
     num_classes = 10
     return X_train, X_test, y_train, y_test, num_classes, preprocessor
 
