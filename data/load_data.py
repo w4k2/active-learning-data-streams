@@ -262,6 +262,8 @@ def load_abalone(random_seed):
 
     y = y.to_numpy().reshape(-1, 1)
     y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
+    print(len(np.unique(y)))
+    exit()
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
     num_classes = 16
     return X_train, X_test, y_train, y_test, num_classes, preprocessor

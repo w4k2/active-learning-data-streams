@@ -6,6 +6,7 @@ import torch
 import random
 import numpy as np
 import distutils.util
+import mkl
 
 from sklearn.metrics import balanced_accuracy_score
 from sklearn.naive_bayes import GaussianNB
@@ -22,6 +23,8 @@ from utils.online_bagging import OnlineBagging
 
 
 def main():
+    mkl.set_num_threads(3)
+    
     args = parse_args()
     seed_everything(args.random_seed)
 
