@@ -52,7 +52,7 @@ def parse_args():
     parser.add_argument('--dataset_name', choices=[
         'accelerometer', 'adult', 'bank_marketing',
         'firewall', 'chess', 'nursery',
-        'poker', 'mushroom', 'wine',
+        'poker', 'mushroom', 'wine', 'abalone'
     ], required=True)
     parser.add_argument('--seed_size', type=int, default=200, help='seed size for model training')
     parser.add_argument('--random_seed', type=int, default=42)

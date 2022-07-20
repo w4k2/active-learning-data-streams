@@ -45,3 +45,8 @@ mkdir data/wine
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv -O data/wine/winequality-red.csv
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv -O data/wine/winequality-white.csv
 wget https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality.names -O data/wine/winequality.names 
+
+# abalone
+mkdir data/abalone
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.data -O data/abalone/abalone.data
+wget https://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.names -O data/abalone/abalone.names

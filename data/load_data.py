@@ -1,4 +1,5 @@
 import csv
+from random import random
 
 import numpy as np
 import pandas
@@ -40,6 +41,8 @@ def load_dataset(dataset_name, random_seed):
         return load_mushroom(random_seed)
     elif dataset_name == 'wine':
         return load_wine(random_seed)
+    elif dataset_name == 'abalone':
+        return load_abalone(random_seed)
     else:
         raise ValueError("Invalid dataset name")
 
@@ -241,6 +244,26 @@ def load_wine(random_seed):
     y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
     num_classes = 5
+    return X_train, X_test, y_train, y_test, num_classes, preprocessor
+
+
+def load_abalone(random_seed):
+    column_names = ['Sex', 'Length', 'Diameter', 'Height', 'Whole weight', 'Shucked weight', 'Viscera weight', 'Shell weight', 'Rings']
+    df = pandas.read_csv('data/abalone/abalone.data', header=None, names=column_names)
+    for c in [32, 20, 3, 21, 23, 22, 27, 24, 1, 26, 29, 2, 25]:
+        df = df[df.loc[:, 'Rings'] != c]
+
+    numeric_features = ['Length', 'Diameter', 'Height', 'Whole weight', 'Shucked weight', 'Viscera weight', 'Shell weight']
+    categorical_features = ['Sex']
+    preprocessor = get_preprocessor(numeric_features, categorical_features)
+
+    X = df.loc[:, df.columns != 'Rings']
+    y = df.loc[:, 'Rings']
+
+    y = y.to_numpy().reshape(-1, 1)
+    y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
+    num_classes = 16
     return X_train, X_test, y_train, y_test, num_classes, preprocessor
 
 
