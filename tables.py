@@ -19,7 +19,7 @@ def main():
         text_table = tabulate.tabulate(table)
         print(text_table)
         latex_table = tabulate.tabulate(table, tablefmt='latex', numalign='center')
-        # latex_table = bold_best_results(latex_table, best_idx)
+        latex_table = bold_best_results(latex_table, best_idx)
         print()
         print(latex_table)
 
@@ -36,6 +36,7 @@ def main():
         text_table = tabulate.tabulate(table)
         print(text_table)
         latex_table = tabulate.tabulate(table, tablefmt='latex', numalign='center')
+        latex_table = bold_best_results(latex_table, best_idx)
         print()
         print(latex_table)
 
