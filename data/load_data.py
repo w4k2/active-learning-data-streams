@@ -12,6 +12,13 @@ import sklearn.preprocessing
 
 def get_data(dataset_name, seed_size, random_seed):
     X_train, X_test, y_train, y_test, num_classes, preprocessor = load_dataset(dataset_name, random_seed)
+
+    # _, counts = np.unique(y_test, return_counts=True)
+    # ir = max(counts) / min(counts)
+    # ir = '{:.4f}'.format(ir)
+    # print('ir = ', ir)
+    # exit()
+
     X_stream, X_seed, y_stream, y_seed = sklearn.model_selection.train_test_split(X_train, y_train, test_size=seed_size, random_state=random_seed, stratify=y_train)
 
     X_seed = preprocessor.fit_transform(X_seed)
@@ -161,17 +168,18 @@ def load_chess(random_seed):
 def load_nursery(random_seed):
     column_names = ['parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', 'CLASS']
     df = pandas.read_csv('data/nursery/nursery.data', header=None, names=column_names)
-    df = df[df.loc[:, 'class'] != 'recommend']
+    df = df[df.loc[:, 'CLASS'] != 'recommend']
 
     numeric_features = []
     categorical_features = ['parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', ]
     preprocessor = get_preprocessor(numeric_features, categorical_features)
 
-    X = df.loc[:, df.columns != 'class']
-    y = df.loc[:, 'class']
+    X = df.loc[:, df.columns != 'CLASS']
+    y = df.loc[:, 'CLASS']
 
     y = y.to_numpy().reshape(-1, 1)
     y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
+
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
     num_classes = 4
     return X_train, X_test, y_train, y_test, num_classes, preprocessor
@@ -262,8 +270,7 @@ def load_abalone(random_seed):
 
     y = y.to_numpy().reshape(-1, 1)
     y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
-    print(len(np.unique(y)))
-    exit()
+
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
     num_classes = 16
     return X_train, X_test, y_train, y_test, num_classes, preprocessor

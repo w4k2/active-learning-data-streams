@@ -69,8 +69,11 @@ class Ours(SelfLabelingStrategy):
 
             use_selflabeling = True
             if len(self.last_predictions) >= min(self.last_predictions.maxlen, 30):
-                _, current_dist = np.unique(
+                current_dist = np.zeros(shape=(self.num_classes,), dtype=int)
+                class_label, class_count = np.unique(
                     list(self.last_predictions), return_counts=True)
+                for i, count in zip(class_label, class_count):
+                    current_dist[i] = count
                 current_dist = current_dist / len(self.last_predictions)
                 delta_p = current_dist[label] - (1.0 / self.num_classes)
                 if delta_p <= 0:
