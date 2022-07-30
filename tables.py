@@ -3,7 +3,7 @@ import tabulate
 
 
 def main():
-    dataset_list = ('adult', 'bank_marketing', 'firewall', 'chess')
+    dataset_list = ('adult', 'bank_marketing', 'firewall', 'chess', 'nursery', 'mushroom', 'wine', 'abalone',)
     for dataset_name in dataset_list:
         parameters_to_load = [
             ('mlp', dataset_name, 1000, 0.1),

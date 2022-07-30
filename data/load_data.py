@@ -149,6 +149,8 @@ def load_firewall(random_seed):
 def load_chess(random_seed):
     df = pandas.read_csv('data/chess/krkopt.data', header=None)
     df = df[df.iloc[:, 6] != 'zero']
+    df = df[df.iloc[:, 6] != 'one']
+    df = df[df.iloc[:, 6] != 'three']
 
     numeric_features = []
     categorical_features = [0, 1, 2, 3, 4, 5]
