@@ -3,46 +3,67 @@ import tabulate
 
 
 def main():
-    dataset_list = ('adult', 'bank_marketing', 'firewall', 'chess', 'nursery', 'mushroom', 'wine', 'abalone',)
-    for dataset_name in dataset_list:
-        parameters_to_load = [
-            ('mlp', dataset_name, 1000, 0.1),
-            ('mlp', dataset_name, 1000, 0.2),
-            ('mlp', dataset_name, 1000, 0.3),
-            ('mlp', dataset_name, 1000, 0.4),
-            ('mlp', dataset_name, 1000, 0.5)
-        ]
-        column_names = ['budget', '0.1', '0.2', '0.3', '0.4', '0.5']
-        table = generate_table(parameters_to_load, column_names)
-        best_idx = find_best(table)
-        print(f'\n\nbase model mlp, dataset {dataset_name}, seed size 200, variable budget')
-        text_table = tabulate.tabulate(table)
-        print(text_table)
-        latex_table = tabulate.tabulate(table, tablefmt='latex', numalign='center')
-        latex_table = bold_best_results(latex_table, best_idx)
-        print()
-        print(latex_table)
-
+    dataset_list_part1 = ('adult', 'bank_marketing', 'firewall', 'chess')
+    results_list = [
+        ('mlp', 1000, 0.1),
+        ('mlp', 1000, 0.2),
+        ('mlp', 1000, 0.3),
+        ('mlp', 1000, 0.4),
+        ('mlp', 1000, 0.5),
+    ]
+    table_from_results(dataset_list_part1, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
     print('\n\n')
+    dataset_list_part2 = ('nursery', 'mushroom', 'wine', 'abalone')
+    table_from_results(dataset_list_part2, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
+
+    print('\n\n\n\n')
+    results_list = [
+        ('mlp', 100, 0.3),
+        ('mlp', 500, 0.3),
+        ('mlp', 1000, 0.3)
+    ]
+    table_from_results(dataset_list_part1, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
+    print('\n\n')
+    table_from_results(dataset_list_part2, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
+
+
+def table_from_results(dataset_list, results_list, num_columns, custom_line):
+    whole_table = "\\begin{tabular}{l|" + "c" * (num_columns - 1) + "}\n"
     for dataset_name in dataset_list:
-        parameters_to_load = [
-            ('mlp', dataset_name, 100, 0.3),
-            ('mlp', dataset_name, 500, 0.3),
-            ('mlp', dataset_name, 1000, 0.3)
-        ]
-        column_names = ['seed size', '100', '500', '1000']
-        table = generate_table(parameters_to_load, column_names)
+        whole_table = add_header(whole_table, dataset_name, num_columns=num_columns, custom_line=custom_line)
+        table = generate_table(results_list, dataset_name)
         best_idx = find_best(table)
-        print(f'\n\nbase model mlp, dataset {dataset_name}, variable seed size, budget 0.3')
-        text_table = tabulate.tabulate(table)
-        print(text_table)
         latex_table = tabulate.tabulate(table, tablefmt='latex', numalign='center')
         latex_table = bold_best_results(latex_table, best_idx)
-        print()
-        print(latex_table)
+
+        whole_table = add_table_section(whole_table, latex_table)
+    whole_table += '\end{tabular}'
+    print(whole_table)
 
 
-def generate_table(paramters_to_load, column_names):
+def add_header(table_str, dataset_name, num_columns, custom_line=None):
+    table_str += '\n\\hline \n'
+    table_str += '\\multicolumn{}{}{}{}c{}{}dataset {}{} \\\\ \n'.format('{', num_columns, '}', '{', '}', '{', dataset_name.replace("_", " "), '}')
+    table_str += '\\hline \n'
+    if custom_line:
+        table_str += custom_line
+        table_str += '\\hline \n'
+
+    return table_str
+
+
+def add_table_section(table_str, latex_table):
+    table_lines = latex_table.split('\n')
+    for line in table_lines:
+        if line in ('\\hline', '\\end{tabular}') or line.startswith('\\begin{tabular}'):
+            continue
+        table_str += line
+        table_str += '\n'
+
+    return table_str
+
+
+def generate_table(paramters_to_load, dataset_name):
     results = [
         'results/all_labeled/acc_{}_{}_seed_{}_budget_{}.npy',
         'results/all_labeled_ensemble/acc_{}_{}_seed_{}_budget_{}.npy',
@@ -61,13 +82,14 @@ def generate_table(paramters_to_load, column_names):
         'vote_entropy', 'consensus_entropy', 'max_disagreement', 'ours',
     ]
 
-    table = [column_names]
+    table = []
 
     for filepath, method_name in zip(results, method_names):
         table.append([method_name])
         for params in paramters_to_load:
             try:
-                acc_training = np.load(filepath.format(*params))
+                model_name, seed_size, budget = params
+                acc_training = np.load(filepath.format(model_name, dataset_name, seed_size, budget))
                 acc_final = acc_training[-1]
             except FileNotFoundError:
                 acc_final = np.nan
@@ -80,9 +102,9 @@ def generate_table(paramters_to_load, column_names):
 
 def find_best(table):
     table = np.array(table)
-    table = table[1:, 1:]
+    table = table[3:, 1:]
     table.astype(float)
-    best_indexes = np.argmax(table, axis=0)
+    best_indexes = np.argmax(table, axis=0) + 2
     best_indexes = set((best_idx, column_idx) for column_idx, best_idx in enumerate(best_indexes))
     return best_indexes
 
