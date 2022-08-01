@@ -32,6 +32,7 @@ def main():
         ]
         column_names = ['seed size', '100', '500', '1000']
         table = generate_table(parameters_to_load, column_names)
+        best_idx = find_best(table)
         print(f'\n\nbase model mlp, dataset {dataset_name}, variable seed size, budget 0.3')
         text_table = tabulate.tabulate(table)
         print(text_table)
