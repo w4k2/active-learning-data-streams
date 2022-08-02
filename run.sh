@@ -19,7 +19,6 @@ do_experiments () {
         python main.py --method="max_disagreement" --base_model="mlp" --prediction_threshold=0.00001 --dataset_name="$1" --budget=$BUDGET --random_seed=1410 --seed_size=1000 --verbose=0 &
         echo "waiting for experiments to finish"
         wait
-        # python plots.py --dataset_name="$1" --budget=$BUDGET --random_seed=1410 --seed_size=1000
     done
 
     # base model ng (naive bayes)
@@ -36,7 +35,6 @@ do_experiments () {
     python main.py --method="max_disagreement" --base_model="ng" --prediction_threshold=0.00001 --dataset_name="$1" --budget=0.5 --random_seed=45 --verbose=0 &
     echo "waiting for experiments to finish"
     wait
-    # python plots.py --dataset_name="$1" --budget=0.5 --base_model="ng" --random_seed=45
 
 
     # variable seed size
@@ -55,13 +53,17 @@ do_experiments () {
         python main.py --method="max_disagreement" --base_model="mlp" --prediction_threshold=0.00001 --dataset_name="$1" --budget=0.3 --seed_size=$SEED_SIZE --random_seed=1410 --verbose=0 &
         echo "waiting for experiments to finish"
         wait
-        # python plots.py --dataset_name="$1" --budget=0.3 --seed_size=$SEED_SIZE --random_seed=1410
     done
 }
 
 
 # do_experiments "accelerometer"
-do_experiments "adult"
-do_experiments "bank_marketing"
+# do_experiments "adult"
+# do_experiments "bank_marketing"
 do_experiments "firewall"
-do_experiments "chess"
+# do_experiments "chess"
+# do_experiments "nursery"
+# do_experiments "mushroom"
+# do_experiments "wine"
+# do_experiments "abalone"
+

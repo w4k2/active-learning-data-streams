@@ -130,6 +130,7 @@ def load_bank(random_seed):
 
 def load_firewall(random_seed):
     df = pandas.read_csv('data/firewall/log2.csv')
+    df = df[df.loc[:, 'Action'] != 'reset-both']
 
     numeric_features = ['Source Port', 'Destination Port', 'NAT Source Port', 'NAT Destination Port',
                         'Bytes', 'Bytes Sent', 'Bytes Received', 'Packets', 'Elapsed Time (sec)', 'pkts_sent', 'pkts_received']
@@ -141,7 +142,7 @@ def load_firewall(random_seed):
     y = y.replace(['allow', 'deny', 'drop', 'reset-both'], [0, 1, 2, 3])
     y = y.to_numpy().reshape(-1, 1)
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
-    num_classes = 4
+    num_classes = 3
 
     return X_train, X_test, y_train, y_test, num_classes, preprocessor
 
