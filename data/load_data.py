@@ -13,12 +13,6 @@ import sklearn.preprocessing
 def get_data(dataset_name, seed_size, random_seed):
     X_train, X_test, y_train, y_test, num_classes, preprocessor = load_dataset(dataset_name, random_seed)
 
-    # _, counts = np.unique(y_test, return_counts=True)
-    # ir = max(counts) / min(counts)
-    # ir = '{:.4f}'.format(ir)
-    # print('ir = ', ir)
-    # exit()
-
     X_stream, X_seed, y_stream, y_seed = sklearn.model_selection.train_test_split(X_train, y_train, test_size=seed_size, random_state=random_seed, stratify=y_train)
 
     X_seed = preprocessor.fit_transform(X_seed)
@@ -275,6 +269,39 @@ def load_abalone(random_seed):
 
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
     num_classes = 16
+    return X_train, X_test, y_train, y_test, num_classes, preprocessor
+
+    # return load_pandas(
+    #     'data/abalone/abalone.data',
+    #     random_seed,
+    #     ['Length', 'Diameter', 'Height', 'Whole weight', 'Shucked weight', 'Viscera weight', 'Shell weight'],
+    #     ['Sex'],
+    #     'Rings',
+    #     column_names=['Sex', 'Length', 'Diameter', 'Height', 'Whole weight', 'Shucked weight', 'Viscera weight', 'Shell weight', 'Rings']
+    # )
+
+
+def load_pandas(filepath, random_seed, numeric_features, categorical_features, target_feature, column_names=None, delimiter=None):
+    header = 'infer'
+    if column_names is not None:
+        header = None
+
+    df = pandas.read_csv(filepath, header=header, names=column_names, delimiter=delimiter)
+    counts_df = pandas.value_counts(df.loc[:, target_feature])
+    low_count_classes = list(counts_df.loc[counts_df < 50].index)
+    for class_to_remove in low_count_classes:
+        df = df[df.loc[:, target_feature] != class_to_remove]
+
+    preprocessor = get_preprocessor(numeric_features, categorical_features)
+
+    X = df.loc[:, df.columns != target_feature]
+    y = df.loc[:, target_feature]
+
+    y = y.to_numpy().reshape(-1, 1)
+    y = sklearn.preprocessing.OrdinalEncoder().fit_transform(y)
+    num_classes = len(np.unique(y))
+
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=random_seed, stratify=y)
     return X_train, X_test, y_train, y_test, num_classes, preprocessor
 
 
