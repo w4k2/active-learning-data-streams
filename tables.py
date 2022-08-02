@@ -85,7 +85,7 @@ def generate_table(paramters_to_load, dataset_name):
     table = []
 
     for filepath, method_name in zip(results, method_names):
-        table.append([method_name])
+        table.append([method_name.replace("_", " ")])
         for params in paramters_to_load:
             try:
                 model_name, seed_size, budget = params
