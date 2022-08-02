@@ -112,7 +112,6 @@ def load_adult():
 
 def load_bank(random_seed):
     df = pandas.read_csv('data/bank_marketing/bank-full.csv', delimiter=';')
-    print(df)
 
     numeric_features = ['age', 'duration', 'campaign', 'pdays', 'previous']
     categorical_features = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month', 'poutcome', ]
