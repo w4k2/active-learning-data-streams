@@ -65,7 +65,6 @@ class Ours(SelfLabelingStrategy):
             else:
                 poisson_lambda = abs(self.prediction_threshold - max_supp) / self.prediction_threshold
             label = confident_preds[0]
-            label = np.expand_dims(label, 0)
 
             use_selflabeling = True
             if len(self.last_predictions) >= min(self.last_predictions.maxlen, 30):
@@ -89,6 +88,6 @@ class Ours(SelfLabelingStrategy):
                 if not idx in confident_models_idxs:
                     train_models[idx] = True
 
-            return use_selflabeling, label, {'poisson_lambda': poisson_lambda, 'train_models': train_models}
+            return use_selflabeling, label, poisson_lambda
 
         return False, None, {}

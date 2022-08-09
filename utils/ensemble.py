@@ -2,19 +2,9 @@ import numpy as np
 
 
 def get_model_dataset(data, target):
-    selected_data = []
-    selected_target = []
-    for i in range(data.shape[0]):
-        num_repeats = np.random.poisson(lam=1.0)
-        if num_repeats == 0:
-            continue
+    repeats = np.random.poisson(lam=1.0, size=len(target))
 
-        for _ in range(num_repeats):
-            selected_data.append(data[i])
-            selected_target.append(target[i])
-
-    selected_data = np.stack(selected_data, axis=0)
-    selected_target = np.stack(selected_target, axis=0)
+    selected_data, selected_target = sample_data(data, target, repeats)
 
     all_classes = set(np.unique(target))
     selected_classes = set(np.unique(selected_target))
@@ -27,6 +17,22 @@ def get_model_dataset(data, target):
         selected_data = np.concatenate([selected_data, extra_sample], axis=0)
         selected_target = np.concatenate([selected_target, extra_target], axis=0)
 
+    return selected_data, selected_target
+
+
+def sample_data(data, target, repeats):
+    selected_data = []
+    selected_target = []
+    for i, num_repeats in enumerate(repeats):
+        if num_repeats == 0:
+            continue
+
+        for _ in range(num_repeats):
+            selected_data.append(data[i])
+            selected_target.append(target[i])
+
+    selected_data = np.stack(selected_data, axis=0)
+    selected_target = np.stack(selected_target, axis=0)
     return selected_data, selected_target
 
 
@@ -67,18 +73,13 @@ class Ensemble:
         predictions = np.stack(predictions, axis=0)
         return predictions
 
-    def partial_fit(self, data, target, poisson_lambda=1.0, train_models=None):
-        if train_models is None:
-            train_models = (True for _ in range(len(self.models)))
-
-        for train, model in zip(train_models, self.models):
-            if not train:
-                continue
+    def partial_fit(self, data, target, poisson_lambdas=None):
+        for model in self.models:
             if self.diversify:
-                num_repeats = np.random.poisson(lam=poisson_lambda)
-                num_repeats = min(num_repeats, 4)
-                if num_repeats > 0:
-                    target = np.ravel(target)
-                    model.partial_fit(data, target)
+                num_repeats = np.random.poisson(lam=poisson_lambdas)
+                num_repeats = np.minimum(num_repeats, 4)
+                model_data, model_target = sample_data(data, target, num_repeats)
+                model_target = np.ravel(model_target)
+                model.partial_fit(model_data, model_target)
             else:
                 model.partial_fit(data, target)

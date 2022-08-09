@@ -23,7 +23,7 @@ from utils.online_bagging import OnlineBagging
 
 
 def main():
-    mkl.set_num_threads(3)
+    mkl.set_num_threads(10)
 
     args = parse_args()
     seed_everything(args.random_seed)
@@ -43,7 +43,7 @@ def main():
         train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes)
 
     os.makedirs(f'results/{args.method}', exist_ok=True)
-    experiment_parameters = f'{args.base_model}_{args.dataset_name}_seed_{args.seed_size}_budget_{args.budget}'
+    experiment_parameters = f'{args.base_model}_{args.dataset_name}_seed_{args.seed_size}_budget_{args.budget}_random_seed_{args.random_seed}'
     np.save(f'results/{args.method}/acc_{experiment_parameters}.npy', acc)
     np.save(
         f'results/{args.method}/budget_end_{experiment_parameters}.npy', budget_end)
@@ -71,6 +71,7 @@ def parse_args():
     parser.add_argument('--ensemble_diversify', action='store_true')
     parser.add_argument('--num_classifiers', type=int, default=9)
     parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for Adam optimizer')
+    parser.add_argument('--lr', type=float, default=0.001, help='learning rate for MLP')
 
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--verbose', type=distutils.util.strtobool, default=True)
@@ -96,13 +97,23 @@ def get_base_model(args):
         # model = utils.mlp_pytorch.MLPClassifierPytorch(hidden_layer_sizes=(  # TODO why it is working better for pytorch implementation of MLP? it is not the case of changing optimizer between fit and partial fit
         #     100, 100), learning_rate_init=0.001, max_iter=500, beta_1=args.beta1)
         model = MLPClassifier(hidden_layer_sizes=(
-            100, 100), learning_rate_init=0.001, max_iter=1000, beta_1=args.beta1)
+            100, 100), learning_rate_init=args.lr, max_iter=5000, beta_1=args.beta1)
     else:
         raise ValueError("Invalid base classifier")
     return model
 
 
 def training(train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes):
+    if args.method in ('all_labeled', 'all_labeled_ensemble'):
+        train_data, train_target = zip(*train_stream)
+        train_data, train_target = update_training_data(seed_data, seed_target, train_data, train_target)
+        model.fit(train_data, train_target)
+        test_pred = model.predict(test_data)
+        acc = balanced_accuracy_score(test_target, test_pred)
+        print(f'final acc = {acc}')
+        return [acc], -1
+
+    seed_target = np.squeeze(seed_target, axis=1)
     model.fit(seed_data, seed_target)
     test_pred = model.predict(test_data)
     acc = balanced_accuracy_score(test_target, test_pred)
@@ -111,7 +122,57 @@ def training(train_stream, seed_data, seed_target, test_data, test_target, model
     acc_list = list()
     budget_end = -1
     current_budget = math.floor(len(train_stream) * args.budget)
+    strategy = get_strategy(model, args, num_classes)
 
+    if args.method == 'ours':
+        lambdas = np.ones_like(seed_target, dtype=float)
+
+    if args.verbose:
+        train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
+
+    for i, (obj, target) in enumerate(train_stream):
+        test_pred = model.predict(test_data)
+        acc = balanced_accuracy_score(test_target, test_pred)
+        acc_list.append(acc)
+        obj = np.expand_dims(obj, 0)
+
+        if args.method in ('ours', ):
+            if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
+                seed_data, seed_target = update_training_data(seed_data, seed_target, obj, target)
+                lambdas = np.concatenate((lambdas, [1.0]), axis=0)
+                model.partial_fit(seed_data, seed_target, lambdas)
+                current_budget -= 1
+                if args.method == 'ours':
+                    strategy.last_predictions.append(int(target))
+            else:
+                train, label, poisson_lambda = strategy.use_self_labeling(obj, current_budget, args.budget)
+                if train:
+                    seed_data, seed_target = update_training_data(seed_data, seed_target, obj, label)
+                    lambdas = np.concatenate((lambdas, [poisson_lambda]), axis=0)
+                    model.partial_fit(seed_data, seed_target, lambdas)
+        else:  # active learning strategy
+            if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
+                seed_data, seed_target = update_training_data(seed_data, seed_target, obj, target)
+                model.partial_fit(seed_data, seed_target)
+                current_budget -= 1
+
+        if current_budget == 0:
+            current_budget = -1
+            budget_end = i
+            print(f'budget ended at {i}')
+
+    print(f'budget after training = {current_budget}')
+    print(f'final acc = {acc_list[-1]}')
+    return acc_list, budget_end
+
+
+def update_training_data(seed_data, seed_target, obj, target):
+    seed_data = np.concatenate((seed_data, obj), axis=0)
+    seed_target = np.concatenate((seed_target, target), axis=0)
+    return seed_data, seed_target
+
+
+def get_strategy(model, args, num_classes):
     if args.method == 'ours':
         strategy = self_labeling_strategies.Ours(model, num_classes, args.prediction_threshold)
     elif args.method == 'random':
@@ -130,42 +191,7 @@ def training(train_stream, seed_data, seed_target, test_data, test_target, model
         strategy = active_learning_strategies.ConsensusEntropy(model, args.prediction_threshold)
     elif args.method == 'max_disagreement':
         strategy = active_learning_strategies.MaxDisagreement(model, args.prediction_threshold)
-
-    if args.verbose:
-        train_stream = tqdm.tqdm(train_stream, total=len(train_stream))
-
-    for i, (obj, target) in enumerate(train_stream):
-        test_pred = model.predict(test_data)
-        acc = balanced_accuracy_score(test_target, test_pred)
-        # print(acc)
-        acc_list.append(acc)
-        obj = np.expand_dims(obj, 0)
-
-        if args.method in ('all_labeled', 'all_labeled_ensemble', 'online_bagging'):
-            model.partial_fit(obj, target)
-        elif args.method in ('ours', ):
-            if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
-                model.partial_fit(obj, target)
-                current_budget -= 1
-                if args.method == 'ours':
-                    strategy.last_predictions.append(int(target))
-            else:
-                train, label, train_kwargs = strategy.use_self_labeling(obj, current_budget, args.budget)
-                if train:
-                    model.partial_fit(obj, label, **train_kwargs)
-        else:  # active learning strategy
-            if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
-                model.partial_fit(obj, target)
-                current_budget -= 1
-
-        if current_budget == 0:
-            current_budget = -1
-            budget_end = i
-            print(f'budget ended at {i}')
-
-    print(f'budget after training = {current_budget}')
-    print(f'final acc = {acc_list[-1]}')
-    return acc_list, budget_end
+    return strategy
 
 
 if __name__ == '__main__':

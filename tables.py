@@ -11,34 +11,57 @@ def main():
         ('mlp', 1000, 0.4),
         ('mlp', 1000, 0.5),
     ]
-    table_from_results(dataset_list_part1, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
+    # table_from_results(dataset_list_part1, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
     print('\n\n')
-    dataset_list_part2 = ('nursery', 'mushroom', 'wine', 'abalone')
+    dataset_list_part2 = ('wine', )  # ('nursery', 'mushroom', 'wine', 'abalone')
     table_from_results(dataset_list_part2, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
 
-    print('\n\n\n\n')
-    results_list = [
-        ('mlp', 100, 0.3),
-        ('mlp', 500, 0.3),
-        ('mlp', 1000, 0.3)
-    ]
-    table_from_results(dataset_list_part1, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
-    print('\n\n')
-    table_from_results(dataset_list_part2, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
+    # print('\n\n\n\n')
+    # results_list = [
+    #     ('mlp', 100, 0.3),
+    #     ('mlp', 500, 0.3),
+    #     ('mlp', 1000, 0.3)
+    # ]
+    # table_from_results(dataset_list_part1, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
+    # print('\n\n')
+    # table_from_results(dataset_list_part2, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
 
 
 def table_from_results(dataset_list, results_list, num_columns, custom_line):
+    method_names = [
+        'all_labeled',
+        'all_labeled_ensemble',
+        'random',
+        'fixed_uncertainty',
+        'variable_uncertainty',
+        'classification_margin',
+        'vote_entropy',
+        'consensus_entropy',
+        'max_disagreement',
+        'ours',
+    ]
+
     whole_table = "\\begin{tabular}{l|" + "c" * (num_columns - 1) + "}\n"
     for dataset_name in dataset_list:
         whole_table = add_header(whole_table, dataset_name, num_columns=num_columns, custom_line=custom_line)
-        table = generate_table(results_list, dataset_name)
+        table = generate_averaged_table(results_list, dataset_name, method_names)
         best_idx = find_best(table)
+        table = add_method_names(table, method_names)
         latex_table = tabulate.tabulate(table, tablefmt='latex', numalign='center')
         latex_table = bold_best_results(latex_table, best_idx)
 
         whole_table = add_table_section(whole_table, latex_table)
     whole_table += '\end{tabular}'
     print(whole_table)
+
+
+def add_method_names(table, method_names):
+    new_table = []
+    for method_name, row in zip(method_names, table):
+        new_table.append([])
+        new_table[-1].append(method_name.replace("_", " "))
+        new_table[-1].extend(['{:.4f}'.format(acc) for acc in row])
+    return new_table
 
 
 def add_header(table_str, dataset_name, num_columns, custom_line=None):
@@ -63,47 +86,39 @@ def add_table_section(table_str, latex_table):
     return table_str
 
 
-def generate_table(paramters_to_load, dataset_name):
-    results = [
-        'results/all_labeled/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/all_labeled_ensemble/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/random/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/fixed_uncertainty/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/variable_uncertainty/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/classification_margin/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/vote_entropy/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/consensus_entropy/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/max_disagreement/acc_{}_{}_seed_{}_budget_{}.npy',
-        'results/ours/acc_{}_{}_seed_{}_budget_{}.npy',
-    ]
-    method_names = [
-        'all labeled', 'all labeled ensemble',
-        'random', 'fixed_uncertainty', 'variable_uncertainty', 'classification_margin',
-        'vote_entropy', 'consensus_entropy', 'max_disagreement', 'ours',
-    ]
-
+def generate_averaged_table(paramters_to_load, dataset_name, method_names):
     table = []
 
-    for filepath, method_name in zip(results, method_names):
-        table.append([method_name.replace("_", " ")])
-        for params in paramters_to_load:
-            try:
-                model_name, seed_size, budget = params
-                acc_training = np.load(filepath.format(model_name, dataset_name, seed_size, budget))
-                acc_final = acc_training[-1]
-            except FileNotFoundError:
-                acc_final = np.nan
-
-            acc_final = '{:.4f}'.format(acc_final)
-            table[-1].append(acc_final)
+    for method_name in method_names:
+        avrg_row = []
+        for random_seed in [42, 43, 44, 45, 46, 47, 48, 49, 50, 51]:
+            row = read_row(paramters_to_load, method_name, dataset_name, random_seed)
+            avrg_row.append(row)
+        avrg_row = np.mean(avrg_row, axis=0, keepdims=False)
+        table.append(avrg_row)
 
     return table
 
 
+def read_row(paramters_to_load, method_name, dataset_name, random_seed):
+    filepath = 'results/{}/acc_{}_{}_seed_{}_budget_{}_random_seed_{}.npy'
+
+    row = []
+    for params in paramters_to_load:
+        try:
+            model_name, seed_size, budget = params
+            acc_training = np.load(filepath.format(method_name, model_name, dataset_name, seed_size, budget, random_seed))
+            acc_final = acc_training[-1]
+        except FileNotFoundError:
+            acc_final = np.nan
+
+        row.append(acc_final)
+
+    return row
+
+
 def find_best(table):
-    table = np.array(table)
-    table = table[3:, 1:]
-    table.astype(float)
+    table = table[2:]
     best_indexes = np.argmax(table, axis=0) + 2
     best_indexes = set((best_idx, column_idx) for column_idx, best_idx in enumerate(best_indexes))
     return best_indexes
