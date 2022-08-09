@@ -10,17 +10,13 @@ import sklearn.pipeline
 import sklearn.preprocessing
 
 
-def get_data(dataset_name, seed_size, random_seed):
+def get_data(dataset_name, random_seed):
     X_train, X_test, y_train, y_test, num_classes, preprocessor = load_dataset(dataset_name, random_seed)
 
-    X_stream, X_seed, y_stream, y_seed = sklearn.model_selection.train_test_split(X_train, y_train, test_size=seed_size, random_state=random_seed, stratify=y_train)
-
-    X_seed = preprocessor.fit_transform(X_seed)
-    X_stream = preprocessor.transform(X_stream)
+    X_train = preprocessor.fit_transform(X_train)
     X_test = preprocessor.transform(X_test)
 
-    stream = list(zip(X_stream, y_stream))
-    return X_seed, y_seed, X_test, y_test, stream, num_classes
+    return X_train, y_train, X_test, y_test, num_classes
 
 
 def load_dataset(dataset_name, random_seed):

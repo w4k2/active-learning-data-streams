@@ -7,6 +7,7 @@ import random
 import numpy as np
 import distutils.util
 import mkl
+import sklearn.model_selection
 
 from sklearn.metrics import balanced_accuracy_score
 from sklearn.naive_bayes import GaussianNB
@@ -19,6 +20,7 @@ import data.load_data
 import utils.diversity
 import utils.mlp_pytorch
 import utils.new_model
+import utils.stream
 from utils.online_bagging import OnlineBagging
 
 
@@ -28,8 +30,8 @@ def main():
     args = parse_args()
     seed_everything(args.random_seed)
 
-    seed_data, seed_target, test_data, test_target, train_stream, num_classes = data.load_data.get_data(
-        args.dataset_name, args.seed_size, args.random_seed)
+    train_data, train_target, test_data, test_target, num_classes = data.load_data.get_data(args.dataset_name, args.random_seed)
+
     if args.method == 'online_bagging':
         base_model = get_base_model(args)
         model = OnlineBagging(base_estimator=base_model, n_estimators=args.num_classifiers)
@@ -39,8 +41,15 @@ def main():
     else:
         model = get_base_model(args)
 
-    acc, budget_end = training(
-        train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes)
+    if args.method in ('all_labeled', 'all_labeled_ensemble'):
+        acc = training_full_dataset(model, train_data, train_target, test_data, test_target)
+        budget_end = -1
+    else:
+        X_stream, seed_data, y_stream, seed_target = sklearn.model_selection.train_test_split(train_data, train_target,
+                                                                                              test_size=args.seed_size, random_state=args.random_seed, stratify=train_target)
+        train_stream = utils.stream.Stream(X_stream, y_stream)
+        acc, budget_end = training_stream(
+            train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes)
 
     os.makedirs(f'results/{args.method}', exist_ok=True)
     experiment_parameters = f'{args.base_model}_{args.dataset_name}_seed_{args.seed_size}_budget_{args.budget}_random_seed_{args.random_seed}'
@@ -103,16 +112,15 @@ def get_base_model(args):
     return model
 
 
-def training(train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes):
-    if args.method in ('all_labeled', 'all_labeled_ensemble'):
-        train_data, train_target = zip(*train_stream)
-        train_data, train_target = update_training_data(seed_data, seed_target, train_data, train_target)
-        model.fit(train_data, train_target)
-        test_pred = model.predict(test_data)
-        acc = balanced_accuracy_score(test_target, test_pred)
-        print(f'final acc = {acc}')
-        return [acc], -1
+def training_full_dataset(model, train_data, train_target, test_data, test_target):
+    model.fit(train_data, train_target)
+    test_pred = model.predict(test_data)
+    acc = balanced_accuracy_score(test_target, test_pred)
+    print(f'final acc = {acc}')
+    return [acc]
 
+
+def training_stream(train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes):
     seed_target = np.squeeze(seed_target, axis=1)
     model.fit(seed_data, seed_target)
     test_pred = model.predict(test_data)

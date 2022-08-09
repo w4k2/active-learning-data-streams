@@ -8,7 +8,7 @@ do_experiments () {
     do
         # python main.py --method="all_labeled" --base_model="mlp" --dataset_name="$1" --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
         # python main.py --method="all_labeled_ensemble" --base_model="mlp" --dataset_name="$1" --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
-        for BUDGET in 0.1 0.2; #0.3 0.4 0.5;
+        for BUDGET in 0.1 0.2 0.3 0.4 0.5;
         do
             echo "experiments with budget = $BUDGET"
             python main.py --method="ours" --base_model="mlp" --beta1=0.9 --prediction_threshold=0.8 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
