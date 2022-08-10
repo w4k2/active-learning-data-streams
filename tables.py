@@ -119,7 +119,8 @@ def read_row(paramters_to_load, method_name, dataset_name, random_seed):
 
 def find_best(table):
     table = table[2:]
-    best_indexes = np.argmax(table, axis=0) + 2
+    table = np.nan_to_num(table)
+    best_indexes = np.argmax(table, axis=0) + 1
     best_indexes = set((best_idx, column_idx) for column_idx, best_idx in enumerate(best_indexes))
     return best_indexes
 

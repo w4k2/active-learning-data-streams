@@ -44,13 +44,10 @@ class Ensemble:
 
     def fit(self, data, target):
         for model in self.models:
-            if self.diversify:
-                train_data, train_target = get_model_dataset(data, target)
-                train_target = np.ravel(train_target)
-                model.fit(train_data, train_target)
-                self.seed_data = train_data
-            else:
-                model.fit(data, target)
+            train_data, train_target = get_model_dataset(data, target)
+            train_target = np.ravel(train_target)
+            model.fit(train_data, train_target)
+            self.seed_data = train_data
 
     def predict(self, data):
         pred_prob = self.predict_proba(data)

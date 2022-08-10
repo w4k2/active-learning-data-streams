@@ -1,23 +1,23 @@
 import argparse
+import distutils.util
 import math
 import os
-import tqdm
-import torch
 import random
-import numpy as np
-import distutils.util
-import mkl
-import sklearn.model_selection
 
+import mkl
+import numpy as np
+import sklearn.model_selection
+import torch
+import tqdm
 from sklearn.metrics import balanced_accuracy_score
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 
 import active_learning_strategies
-import self_labeling_strategies
-import utils.ensemble
 import data.load_data
+import self_labeling_strategies
 import utils.diversity
+import utils.ensemble
 import utils.mlp_pytorch
 import utils.new_model
 import utils.stream
@@ -25,7 +25,7 @@ from utils.online_bagging import OnlineBagging
 
 
 def main():
-    mkl.set_num_threads(10)
+    mkl.set_num_threads(3)
 
     args = parse_args()
     seed_everything(args.random_seed)
@@ -37,7 +37,8 @@ def main():
         model = OnlineBagging(base_estimator=base_model, n_estimators=args.num_classifiers)
     elif args.method in ('all_labeled_ensemble', 'ours', 'vote_entropy', 'consensus_entropy', 'max_disagreement'):
         models = [get_base_model(args) for _ in range(args.num_classifiers)]
-        model = utils.ensemble.Ensemble(models, diversify=True)
+        diversify = args.method == 'ours'
+        model = utils.ensemble.Ensemble(models, diversify=diversify)
     else:
         model = get_base_model(args)
 

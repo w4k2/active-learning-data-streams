@@ -6,19 +6,19 @@ do_experiments () {
     # variable budget
     for RANDOM_SEED in 42 43 44 45 46 47 48 49 50 51;
     do
-        # python main.py --method="all_labeled" --base_model="mlp" --dataset_name="$1" --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
-        # python main.py --method="all_labeled_ensemble" --base_model="mlp" --dataset_name="$1" --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
+        python main.py --method="all_labeled" --base_model="mlp" --dataset_name="$1" --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
+        python main.py --method="all_labeled_ensemble" --base_model="mlp" --dataset_name="$1" --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
         for BUDGET in 0.1 0.2 0.3 0.4 0.5;
         do
             echo "experiments with budget = $BUDGET"
             python main.py --method="ours" --base_model="mlp" --beta1=0.9 --prediction_threshold=0.8 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
-            # python main.py --method="random" --base_model="mlp"  --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 & # --lr=0.001
-            # python main.py --method="fixed_uncertainty" --base_model="mlp" --prediction_threshold=0.995 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
-            # python main.py --method="variable_uncertainty" --base_model="mlp" --prediction_threshold=0.95 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
+            python main.py --method="random" --base_model="mlp"  --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 & # --lr=0.001
+            python main.py --method="fixed_uncertainty" --base_model="mlp" --prediction_threshold=0.995 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
+            python main.py --method="variable_uncertainty" --base_model="mlp" --prediction_threshold=0.95 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
             # python main.py --method="classification_margin" --base_model="mlp" --prediction_threshold=0.3 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
-            # python main.py --method="vote_entropy" --base_model="mlp" --prediction_threshold=2.0 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
-            # python main.py --method="consensus_entropy" --base_model="mlp" --prediction_threshold=0.3 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
-            # python main.py --method="max_disagreement" --base_model="mlp" --prediction_threshold=0.00001 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
+            python main.py --method="vote_entropy" --base_model="mlp" --prediction_threshold=2.0 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
+            # python main.py --method="consensus_entropy" --base_model="mlp" --prediction_threshold=0.8 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
+            # python main.py --method="max_disagreement" --base_model="mlp" --prediction_threshold=1.0 --dataset_name="$1" --budget=$BUDGET --random_seed=$RANDOM_SEED --seed_size=1000 --verbose=0 &
             echo "waiting for experiments to finish"
             wait
         done
