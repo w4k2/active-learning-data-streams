@@ -3,7 +3,7 @@ import tabulate
 
 
 def main():
-    dataset_list_part1 = ('adult', 'bank_marketing', 'firewall', 'chess')
+    # dataset_list_part1 = ('adult', 'bank_marketing', 'firewall', 'chess')
     results_list = [
         ('mlp', 1000, 0.1),
         ('mlp', 1000, 0.2),
@@ -13,7 +13,7 @@ def main():
     ]
     # table_from_results(dataset_list_part1, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
     print('\n\n')
-    dataset_list_part2 = ('wine', )  # ('nursery', 'mushroom', 'wine', 'abalone')
+    dataset_list_part2 = ('nursery', 'mushroom', 'wine', 'abalone')
     table_from_results(dataset_list_part2, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
 
     # print('\n\n\n\n')
@@ -91,7 +91,7 @@ def generate_averaged_table(paramters_to_load, dataset_name, method_names):
 
     for method_name in method_names:
         avrg_row = []
-        for random_seed in [42, 43, 44, 45, 46, 47, 48, 49, 50, 51]:
+        for random_seed in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
             row = read_row(paramters_to_load, method_name, dataset_name, random_seed)
             avrg_row.append(row)
         avrg_row = np.mean(avrg_row, axis=0, keepdims=False)

@@ -25,9 +25,13 @@ from utils.online_bagging import OnlineBagging
 
 
 def main():
-    mkl.set_num_threads(3)
-
     args = parse_args()
+    acc, budget_end, _ = do_experiment(args)
+    save_results(args, acc, budget_end)
+
+
+def do_experiment(args):
+    mkl.set_num_threads(3)
     seed_everything(args.random_seed)
 
     train_data, train_target, test_data, test_target, num_classes = data.load_data.get_data(args.dataset_name, args.random_seed)
@@ -45,18 +49,14 @@ def main():
     if args.method in ('all_labeled', 'all_labeled_ensemble'):
         acc = training_full_dataset(model, train_data, train_target, test_data, test_target)
         budget_end = -1
+        budget_after = 0
     else:
         X_stream, seed_data, y_stream, seed_target = sklearn.model_selection.train_test_split(train_data, train_target,
                                                                                               test_size=args.seed_size, random_state=args.random_seed, stratify=train_target)
         train_stream = utils.stream.Stream(X_stream, y_stream)
-        acc, budget_end = training_stream(
+        acc, budget_end, budget_after = training_stream(
             train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes)
-
-    os.makedirs(f'results/{args.method}', exist_ok=True)
-    experiment_parameters = f'{args.base_model}_{args.dataset_name}_seed_{args.seed_size}_budget_{args.budget}_random_seed_{args.random_seed}'
-    np.save(f'results/{args.method}/acc_{experiment_parameters}.npy', acc)
-    np.save(
-        f'results/{args.method}/budget_end_{experiment_parameters}.npy', budget_end)
+    return acc, budget_end, budget_after
 
 
 def parse_args():
@@ -172,7 +172,7 @@ def training_stream(train_stream, seed_data, seed_target, test_data, test_target
 
     print(f'budget after training = {current_budget}')
     print(f'final acc = {acc_list[-1]}')
-    return acc_list, budget_end
+    return acc_list, budget_end, current_budget
 
 
 def update_training_data(seed_data, seed_target, obj, target):
@@ -197,10 +197,18 @@ def get_strategy(model, args, num_classes):
     elif args.method == 'vote_entropy':
         strategy = active_learning_strategies.VoteEntropy(model, args.prediction_threshold)
     elif args.method == 'consensus_entropy':
-        strategy = active_learning_strategies.ConsensusEntropy(model, args.prediction_threshold)
+        strategy = active_learning_strategies.ConsensusEntropy(model, args.prediction_threshold, num_classes)
     elif args.method == 'max_disagreement':
         strategy = active_learning_strategies.MaxDisagreement(model, args.prediction_threshold)
     return strategy
+
+
+def save_results(args, acc, budget_end):
+    os.makedirs(f'results/{args.method}', exist_ok=True)
+    experiment_parameters = f'{args.base_model}_{args.dataset_name}_seed_{args.seed_size}_budget_{args.budget}_random_seed_{args.random_seed}'
+    np.save(f'results/{args.method}/acc_{experiment_parameters}.npy', acc)
+    np.save(
+        f'results/{args.method}/budget_end_{experiment_parameters}.npy', budget_end)
 
 
 if __name__ == '__main__':

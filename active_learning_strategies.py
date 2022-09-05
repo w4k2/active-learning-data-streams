@@ -88,13 +88,14 @@ class VoteEntropy(ActiveLearningStrategy):
 
 
 class ConsensusEntropy(ActiveLearningStrategy):
-    def __init__(self, model, threshold):
+    def __init__(self, model, threshold, num_classes):
         super().__init__(model)
         self.threshold = threshold
+        self.max_entropy = scipy.stats.entropy([1.0/num_classes for _ in range(num_classes)])
 
     def request_label(self, obj, current_budget, budget):
         pred_prob = self.model.predict_proba(obj)
-        entropy = scipy.stats.entropy(pred_prob, axis=1)
+        entropy = scipy.stats.entropy(pred_prob, axis=1) / self.max_entropy
         if entropy > self.threshold:
             return True
         else:
