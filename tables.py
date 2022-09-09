@@ -44,9 +44,9 @@ def table_from_results(dataset_list, results_list, num_columns, custom_line):
     whole_table = "\\begin{tabular}{l|" + "c" * (num_columns - 1) + "}\n"
     for dataset_name in dataset_list:
         whole_table = add_header(whole_table, dataset_name, num_columns=num_columns, custom_line=custom_line)
-        table = generate_averaged_table(results_list, dataset_name, method_names)
+        table, table_std = generate_averaged_table(results_list, dataset_name, method_names)
         best_idx = find_best(table)
-        table = add_method_names(table, method_names)
+        table = add_method_names(method_names, table, table_std)
         latex_table = tabulate.tabulate(table, tablefmt='latex', numalign='center')
         latex_table = bold_best_results(latex_table, best_idx)
 
@@ -55,12 +55,12 @@ def table_from_results(dataset_list, results_list, num_columns, custom_line):
     print(whole_table)
 
 
-def add_method_names(table, method_names):
+def add_method_names(method_names, table, table_std):
     new_table = []
-    for method_name, row in zip(method_names, table):
+    for method_name, row, row_std in zip(method_names, table, table_std):
         new_table.append([])
         new_table[-1].append(method_name.replace("_", " "))
-        new_table[-1].extend(['{:.4f}'.format(acc) for acc in row])
+        new_table[-1].extend(['{:.3f}±{:.3f}'.format(acc, std) for (acc, std) in zip(row, row_std)])
     return new_table
 
 
@@ -88,16 +88,19 @@ def add_table_section(table_str, latex_table):
 
 def generate_averaged_table(paramters_to_load, dataset_name, method_names):
     table = []
+    table_std = []
 
     for method_name in method_names:
-        avrg_row = []
+        results = []
         for random_seed in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
             row = read_row(paramters_to_load, method_name, dataset_name, random_seed)
-            avrg_row.append(row)
-        avrg_row = np.mean(avrg_row, axis=0, keepdims=False)
+            results.append(row)
+        avrg_row = np.mean(results, axis=0, keepdims=False)
         table.append(avrg_row)
+        row_std = np.std(results, axis=0, keepdims=False)
+        table_std.append(row_std)
 
-    return table
+    return table, table_std
 
 
 def read_row(paramters_to_load, method_name, dataset_name, random_seed):
