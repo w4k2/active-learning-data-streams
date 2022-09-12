@@ -31,7 +31,7 @@ def main():
 
 
 def do_experiment(args):
-    mkl.set_num_threads(3)
+    mkl.set_num_threads(20)
     seed_everything(args.random_seed)
 
     train_data, train_target, test_data, test_target, num_classes = data.load_data.get_data(args.dataset_name, args.random_seed)
