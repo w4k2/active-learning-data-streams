@@ -82,6 +82,8 @@ def parse_args():
     parser.add_argument('--num_classifiers', type=int, default=9)
     parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for Adam optimizer')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate for MLP')
+    parser.add_argument('--batch_mode', action='store_true')
+    parser.add_argument('--batch_size', default=50, type=int)
 
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--verbose', type=distutils.util.strtobool, default=True)
@@ -149,7 +151,7 @@ def training_stream(train_stream, seed_data, seed_target, test_data, test_target
             if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
                 seed_data, seed_target = update_training_data(seed_data, seed_target, obj, target)
                 lambdas = np.concatenate((lambdas, [1.0]), axis=0)
-                model.partial_fit(seed_data, seed_target, lambdas)
+                seed_data, seed_target, lambdas = partial_fit(seed_data, seed_target, model, args, lambdas)
                 current_budget -= 1
                 if args.method == 'ours':
                     strategy.last_predictions.append(int(target))
@@ -158,11 +160,11 @@ def training_stream(train_stream, seed_data, seed_target, test_data, test_target
                 if train:
                     seed_data, seed_target = update_training_data(seed_data, seed_target, obj, label)
                     lambdas = np.concatenate((lambdas, [poisson_lambda]), axis=0)
-                    model.partial_fit(seed_data, seed_target, lambdas)
+                    seed_data, seed_target, lambdas = partial_fit(seed_data, seed_target, model, args, lambdas)
         else:  # active learning strategy
             if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
                 seed_data, seed_target = update_training_data(seed_data, seed_target, obj, target)
-                model.partial_fit(seed_data, seed_target)
+                seed_data, seed_target, lambdas = partial_fit(seed_data, seed_target, model, args)
                 current_budget -= 1
 
         if current_budget == 0:
@@ -173,6 +175,20 @@ def training_stream(train_stream, seed_data, seed_target, test_data, test_target
     print(f'budget after training = {current_budget}')
     print(f'final acc = {acc_list[-1]}')
     return acc_list, budget_end, current_budget
+
+
+def partial_fit(seed_data, seed_target, model, args, lambdas=None):
+    if args.batch_mode and len(seed_data) % args.batch_size == 0:
+        if lambdas is not None:
+            model.partial_fit(seed_data, seed_target, lambdas)
+        else:
+            model.partial_fit(seed_data, seed_target)
+    elif not args.batch_mode:
+        if lambdas is not None:
+            model.partial_fit(seed_data, seed_target, lambdas)
+        else:
+            model.partial_fit(seed_data, seed_target)
+    return seed_data, seed_target, lambdas
 
 
 def update_training_data(seed_data, seed_target, obj, target):
