@@ -15,6 +15,8 @@ def get_model_dataset(data, target):
         extra_sample = data[random_idx].reshape(1, -1)
         extra_target = target[random_idx].reshape(1, -1)
         selected_data = np.concatenate([selected_data, extra_sample], axis=0)
+        if selected_target.ndim == 1:
+            selected_target = np.expand_dims(selected_target, axis=1)
         selected_target = np.concatenate([selected_target, extra_target], axis=0)
 
     return selected_data, selected_target

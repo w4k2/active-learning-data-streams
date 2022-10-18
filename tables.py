@@ -11,20 +11,20 @@ def main():
         ('mlp', 1000, 0.4),
         ('mlp', 1000, 0.5),
     ]
-    table_from_results(dataset_list_part1, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
+    # table_from_results(dataset_list_part1, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
     # print('\n\n')
-    # dataset_list_part2 = ('nursery', 'mushroom', 'wine', 'abalone')
+    dataset_list_part2 = ('nursery', 'mushroom', 'wine', 'abalone')
     # table_from_results(dataset_list_part2, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
 
     # print('\n\n\n\n')
-    # results_list = [
-    #     ('mlp', 100, 0.3),
-    #     ('mlp', 500, 0.3),
-    #     ('mlp', 1000, 0.3)
-    # ]
-    # table_from_results(dataset_list_part1, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
-    # print('\n\n')
-    # table_from_results(dataset_list_part2, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
+    results_list = [
+        ('mlp', 100, 0.3),
+        ('mlp', 500, 0.3),
+        ('mlp', 1000, 0.3)
+    ]
+    table_from_results(dataset_list_part1, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
+    print('\n\n')
+    table_from_results(dataset_list_part2, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
 
 
 def table_from_results(dataset_list, results_list, num_columns, custom_line):
