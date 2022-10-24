@@ -10,7 +10,7 @@ def main():
         ('mlp', 1000, 0.4),
         ('mlp', 1000, 0.5),
     ]
-    dataset_list_part1 = ('firewall', 'chess')  # ('adult', 'bank_marketing', 'firewall', 'chess')
+    dataset_list_part1 = ('adult', 'bank_marketing', 'firewall', 'chess')
     table_from_results(dataset_list_part1, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
     # print('\n\n')
     dataset_list_part2 = ('nursery', 'mushroom', 'wine', 'abalone')
