@@ -39,7 +39,7 @@ def do_experiment(args):
     if args.method == 'online_bagging':
         base_model = get_base_model(args)
         model = OnlineBagging(base_estimator=base_model, n_estimators=args.num_classifiers)
-    elif args.method in ('all_labeled_ensemble', 'ours', 'vote_entropy', 'consensus_entropy', 'max_disagreement'):
+    elif args.method in ('all_labeled_ensemble', 'ours', 'vote_entropy', 'consensus_entropy', 'max_disagreement', 'min_margin'):
         models = [get_base_model(args) for _ in range(args.num_classifiers)]
         diversify = args.method == 'ours'
         model = utils.ensemble.Ensemble(models, diversify=diversify)
@@ -74,7 +74,7 @@ def parse_args():
     parser.add_argument('--method', choices=(
                         'ours', 'all_labeled', 'all_labeled_ensemble', 'online_bagging',
                         'random', 'fixed_uncertainty', 'variable_uncertainty', 'classification_margin',
-                        'vote_entropy', 'consensus_entropy', 'max_disagreement'),
+                        'vote_entropy', 'consensus_entropy', 'max_disagreement', 'min_margin'),
                         default='ours')
     parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--prediction_threshold', type=float, default=0.6)

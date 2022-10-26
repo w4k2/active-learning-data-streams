@@ -63,10 +63,7 @@ class ClassificationMargin(ActiveLearningStrategy):
         pred_probs = self.model.predict_proba(obj)
         partition = np.partition(-pred_probs, 1, axis=1)
         margin = - partition[:, 0] + partition[:, 1]
-        if margin < self.threshold:
-            return True
-        else:
-            return False
+        return margin < self.threshold
 
 
 class VoteEntropy(ActiveLearningStrategy):
@@ -81,10 +78,7 @@ class VoteEntropy(ActiveLearningStrategy):
         idx = np.argmax(pred_separate, axis=2).reshape(self.num_classifiers, 1, 1)
         pred_probs = np.take_along_axis(pred_separate, idx, axis=2)
         vote_entropy = scipy.stats.entropy(pred_probs.flatten())
-        if vote_entropy > self.threshold:
-            return True
-        else:
-            return False
+        return vote_entropy > self.threshold
 
 
 class ConsensusEntropy(ActiveLearningStrategy):
@@ -96,10 +90,7 @@ class ConsensusEntropy(ActiveLearningStrategy):
     def request_label(self, obj, current_budget, budget):
         pred_prob = self.model.predict_proba(obj)
         entropy = scipy.stats.entropy(pred_prob, axis=1) / self.max_entropy
-        if entropy > self.threshold:
-            return True
-        else:
-            return False
+        return entropy > self.threshold
 
 
 class MaxDisagreement(ActiveLearningStrategy):
@@ -112,7 +103,20 @@ class MaxDisagreement(ActiveLearningStrategy):
         pred_prob_consensus = np.mean(pred_prob, axis=0, keepdims=False)
         classifers_KL_divergence = [scipy.stats.entropy(pred_prob[i], qk=pred_prob_consensus, axis=1) for i in range(len(pred_prob))]
         max_kl_divergence = np.max(classifers_KL_divergence)
-        if max_kl_divergence > self.threshold:
-            return True
-        else:
-            return False
+        return max_kl_divergence > self.threshold
+
+
+class MinMargin(ActiveLearningStrategy):
+    def __init__(self, model, threshold):
+        assert type(model) == utils.ensemble.Ensemble, "Vote entropy must use ensemble model"
+        super().__init__(model)
+        self.threshold = threshold
+        self.num_classifiers = len(model.models)
+
+    def request_label(self, obj, current_budget, budget):
+        pred_prob = self.model.predict_proba_separate(obj)  # shape: num_classifiers x num_samples x num_classes
+
+        partition = np.partition(-pred_prob, 1, axis=2)
+        margins = - partition[:, :, 0] + partition[:, :, 1]
+        m = np.min(margins, axis=0, keepdims=False)
+        return m < self.threshold
