@@ -216,6 +216,8 @@ def get_strategy(model, args, num_classes):
         strategy = active_learning_strategies.ConsensusEntropy(model, args.prediction_threshold, num_classes)
     elif args.method == 'max_disagreement':
         strategy = active_learning_strategies.MaxDisagreement(model, args.prediction_threshold)
+    elif args.method == 'min_margin':
+        strategy = active_learning_strategies.MinMargin(model, args.prediction_threshold)
     return strategy
 
 

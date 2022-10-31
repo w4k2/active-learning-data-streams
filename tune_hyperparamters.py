@@ -51,6 +51,10 @@ def get_prediction_threshold_inteval(method_name):
         return (0.1, 1.0)
     elif method_name == 'max_disagreement':
         return (1.0, 20.0)
+    elif method_name == 'min_margin':
+        return (0.0, 0.5)
+    else:
+        raise ValueError(f'Undefined hyperparameter interval for {method_name} algorithm')
 
 
 def sample_prediction_threshold(prediction_threshold_interval):
