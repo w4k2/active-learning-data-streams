@@ -38,6 +38,7 @@ def table_from_results(dataset_list, results_list, num_columns, custom_line):
         'vote_entropy',
         'consensus_entropy',
         'max_disagreement',
+        'min_margin',
         'ours',
     ]
 
@@ -123,8 +124,22 @@ def read_row(paramters_to_load, method_name, dataset_name, random_seed):
 def find_best(table):
     table = table[2:]
     table = np.nan_to_num(table)
-    best_indexes = np.argmax(table, axis=0) + 1
-    best_indexes = set((best_idx, column_idx) for column_idx, best_idx in enumerate(best_indexes))
+
+    best_indexes = set()
+    for column_idx in range(table.shape[1]):
+        best_idx_col = []
+        best_acc = 0.0
+        for i in range(table.shape[0]):
+            acc = round(table[i][column_idx], 4)
+            if acc > best_acc:
+                best_acc = acc
+                best_idx_col.clear()
+                best_idx_col.append((i+1, column_idx))
+            elif acc == best_acc:
+                best_idx_col.append((i+1, column_idx))
+        for idx in best_idx_col:
+            best_indexes.add(idx)
+
     return best_indexes
 
 
