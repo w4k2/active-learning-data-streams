@@ -163,10 +163,12 @@ def load_nursery(random_seed):
     df = df[df.loc[:, 'CLASS'] != 'recommend']
 
     numeric_features = []
-    categorical_features = ['parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social', 'health', ]
+    categorical_features = ['parents', 'has_nurs', 'form', 'children', 'housing', 'finance', 'social']
     preprocessor = get_preprocessor(numeric_features, categorical_features)
 
     X = df.loc[:, df.columns != 'CLASS']
+    # drop most informative columns
+    X = df.loc[:, df.columns != 'health']
     y = df.loc[:, 'CLASS']
 
     y = y.to_numpy().reshape(-1, 1)
@@ -209,16 +211,39 @@ def load_poker():
 
 
 def load_mushroom(random_seed):
-    column_names = ['class', 'cap-shape', 'cap-surface', 'cap-color', 'bruises', 'odor', 'gill-attachment', 'gill-spacing', 'gill-size', 'gill-color', 'stalk-shape', 'stalk-root', 'stalk-surface-above-ring',
-                    'stalk-surface-below-ring', 'stalk-color-above-ring', 'stalk-color-below-ring', 'veil-type', 'veil-color', 'ring-number', 'ring-type', 'spore-print-color', 'population', 'habitat']
+    column_names = ['class', 'cap-shape', 'cap-surface', 'cap-color', 'bruises', 'odor', 'gill-attachment', 'gill-spacing',
+                    'gill-size', 'gill-color', 'stalk-shape', 'stalk-root', 'stalk-surface-above-ring',
+                    'stalk-surface-below-ring', 'stalk-color-above-ring', 'stalk-color-below-ring', 'veil-type', 'veil-color',
+                    'ring-number', 'ring-type', 'spore-print-color', 'population', 'habitat']
     df = pandas.read_csv('data/mushroom/agaricus-lepiota.data', header=None, names=column_names)
 
     numeric_features = []
-    categorical_features = ['cap-shape', 'cap-surface', 'cap-color', 'bruises', 'odor', 'gill-attachment', 'gill-spacing', 'gill-size', 'gill-color', 'stalk-shape', 'stalk-root', 'stalk-surface-above-ring',
-                            'stalk-surface-below-ring', 'stalk-color-above-ring', 'stalk-color-below-ring', 'veil-type', 'veil-color', 'ring-number', 'ring-type', 'spore-print-color', 'population', 'habitat']
+    categorical_features = ['cap-shape', 'cap-color']
     preprocessor = get_preprocessor(numeric_features, categorical_features)
 
     X = df.loc[:, df.columns != 'class']
+    # drop most informative columns
+    X = df.loc[:, df.columns != 'bruises']
+    X = df.loc[:, df.columns != 'cap-surface']
+    X = df.loc[:, df.columns != 'gill-spacing']
+    X = df.loc[:, df.columns != 'gill-size']
+    X = df.loc[:, df.columns != 'gill-color']
+    X = df.loc[:, df.columns != 'stalk-root']
+    X = df.loc[:, df.columns != 'stalk-surface-above-ring']
+    X = df.loc[:, df.columns != 'stalk-surface-below-ring']
+    X = df.loc[:, df.columns != 'stalk-color-above-ring']
+    X = df.loc[:, df.columns != 'veil-type']
+    X = df.loc[:, df.columns != 'ring-type']
+    X = df.loc[:, df.columns != 'ring-number']
+    X = df.loc[:, df.columns != 'spore-print-color']
+    X = df.loc[:, df.columns != 'population']
+    X = df.loc[:, df.columns != 'habitat']
+    X = df.loc[:, df.columns != 'veil-color']
+    X = df.loc[:, df.columns != 'stalk-color-below-ring']
+    X = df.loc[:, df.columns != 'gill-attachment']
+    X = df.loc[:, df.columns != 'stalk-shape']
+    X = df.loc[:, df.columns != 'odor']
+
     y = df.loc[:, 'class']
 
     y = y.to_numpy().reshape(-1, 1)
@@ -317,3 +342,23 @@ def get_preprocessor(numeric_features, categorical_features):
     )
 
     return preprocessor
+
+
+if __name__ == '__main__':
+    X_train, X_test, y_train, y_test, num_classes, preprocessor = load_nursery(42)
+    X_train = preprocessor.fit_transform(X_train)
+    X_test = preprocessor.transform(X_test)
+    print(X_train.shape)
+
+    df = pandas.DataFrame(np.concatenate((X_train, y_train), axis=1))
+    correlation = df.corr().iloc[:, -1].abs()
+    print(correlation)
+    print(correlation.sort_values())
+
+    from sklearn.neural_network import MLPClassifier
+    from sklearn.metrics import balanced_accuracy_score
+    model = MLPClassifier(hidden_layer_sizes=(100, 100))
+    model.fit(X_train, y_train)
+    test_pred = model.predict(X_test)
+    acc = balanced_accuracy_score(y_test, test_pred)
+    print('acc = ', acc)
