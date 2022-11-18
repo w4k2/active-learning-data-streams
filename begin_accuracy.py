@@ -6,14 +6,14 @@ import utils.ensemble
 import utils.diversity
 import self_labeling_strategies
 import data.load_data
-from sklearn.metrics import balanced_accuracy_score
-import tqdm
+from sklearn.metrics import balanced_accuracy_score, accuracy_score
 import sklearn.model_selection
 import numpy as np
 import mkl
 import math
-from main import seed_everything, get_base_model, update_training_data, partial_fit
+from main import seed_everything, update_training_data, partial_fit
 from utils.ensemble import sample_data
+from sklearn.neural_network import MLPClassifier
 
 
 class args:
@@ -30,14 +30,15 @@ def main(begin_acc):
     random_seed = 42
     mkl.set_num_threads(4)
     seed_everything(random_seed)
-    dataset_name = 'nursery'
+    dataset_name = 'mushroom'
     seed_size = 1000
 
     train_data, train_target, test_data, test_target, num_classes = data.load_data.get_data(dataset_name, random_seed)
     X_stream, seed_data, y_stream, seed_target = sklearn.model_selection.train_test_split(train_data, train_target,
                                                                                           test_size=seed_size, random_state=random_seed, stratify=train_target)
 
-    models = [get_base_model(args) for _ in range(args.num_classifiers)]
+    models = [MLPClassifier(hidden_layer_sizes=(100, 100), learning_rate_init=args.lr, max_iter=5000, beta_1=args.beta1)
+              for _ in range(args.num_classifiers)]
     model = utils.ensemble.Ensemble(models, diversify=True)
     classes = np.unique(seed_target)
 
@@ -104,9 +105,9 @@ def training_stream(train_stream, seed_data, seed_target, test_data, test_target
 def fit_until_accuracy(model, seed_data, seed_target, test_data, test_target, acc=0.9):
     current_acc = 0.0
     while current_acc < acc:
-        for i in range(0, len(seed_target), 100):
-            batch_data = seed_data[i:i+100, :]
-            batch_target = seed_target[i:i+100]
+        for i in range(0, len(seed_target), 50):
+            batch_data = seed_data[i:i+50, :]
+            batch_target = seed_target[i:i+50]
             lambdas = np.ones_like(batch_target)
             model.partial_fit(batch_data, batch_target, lambdas)
             y_pred = model.predict(test_data)
@@ -118,7 +119,7 @@ def fit_until_accuracy(model, seed_data, seed_target, test_data, test_target, ac
 
 
 if __name__ == '__main__':
-    main(0.25)
-    main(0.3)
-    main(0.35)
-    main(0.4)
+    main(0.5)
+    main(0.55)
+    main(0.6)
+    main(0.63)
