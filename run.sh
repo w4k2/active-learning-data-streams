@@ -24,6 +24,7 @@ do_experiments () {
         python tune_hyperparamters.py --method="vote_entropy" --base_model="mlp" --prediction_threshold=10.0 --dataset_name="$1" --budget=$BUDGET --random_seed=42 --seed_size=1000 --verbose=0 &
         python tune_hyperparamters.py --method="consensus_entropy" --base_model="mlp" --prediction_threshold=1.0 --dataset_name="$1" --budget=$BUDGET --random_seed=42 --seed_size=1000 --verbose=0 &
         python tune_hyperparamters.py --method="max_disagreement" --base_model="mlp" --prediction_threshold=20.0 --dataset_name="$1" --budget=$BUDGET --random_seed=42 --seed_size=1000 --verbose=0 &
+        python tune_hyperparamters.py --method="min_margin" --base_model="mlp" --prediction_threshold=1.0 --dataset_name="$1" --budget=$BUDGET --random_seed=42 --seed_size=1000 --verbose=0 &
         echo "waiting for experiments to finish"
         wait
     done
@@ -40,6 +41,7 @@ do_experiments () {
     python tune_hyperparamters.py --method="vote_entropy" --base_model="ng" --prediction_threshold=2.1 --dataset_name="$1" --budget=0.5 --random_seed=45 --verbose=0 &
     python tune_hyperparamters.py --method="consensus_entropy" --base_model="ng" --prediction_threshold=0.3 --dataset_name="$1" --budget=0.5 --random_seed=45 --verbose=0 &
     python tune_hyperparamters.py --method="max_disagreement" --base_model="ng" --prediction_threshold=0.00001 --dataset_name="$1" --budget=0.5 --random_seed=45 --verbose=0 &
+    python tune_hyperparamters.py --method="min_margin" --base_model="ng" --prediction_threshold=1.0 --dataset_name="$1" --budget=0.5 --seed_size=$SEED_SIZE --random_seed=45 --verbose=0 &
     echo "waiting for experiments to finish"
     wait
 
@@ -65,6 +67,7 @@ do_experiments () {
         python tune_hyperparamters.py --method="vote_entropy" --base_model="mlp" --prediction_threshold=2.1 --dataset_name="$1" --budget=0.3 --seed_size=$SEED_SIZE --random_seed=42 --verbose=0 &
         python tune_hyperparamters.py --method="consensus_entropy" --base_model="mlp" --prediction_threshold=0.3 --dataset_name="$1" --budget=0.3 --seed_size=$SEED_SIZE --random_seed=42 --verbose=0 &
         python tune_hyperparamters.py --method="max_disagreement" --base_model="mlp" --prediction_threshold=0.00001 --dataset_name="$1" --budget=0.3 --seed_size=$SEED_SIZE --random_seed=42 --verbose=0 &
+        python tune_hyperparamters.py --method="min_margin" --base_model="mlp" --prediction_threshold=1.0 --dataset_name="$1" --budget=0.3 --seed_size=$SEED_SIZE --random_seed=42 --verbose=0 &
         echo "waiting for experiments to finish"
         wait
     done
