@@ -36,6 +36,21 @@ def do_experiment(args):
 
     train_data, train_target, test_data, test_target, num_classes = data.load_data.get_data(args.dataset_name, args.random_seed)
 
+    # def undersapmling(data, target):
+    #     class_1 = np.argwhere(target == 1)[:, 0]
+    #     class_2 = np.argwhere(target == 2)[:, 0]
+    #     class_3 = np.argwhere(target == 3)[:, 0]
+
+    #     lowest = min(len(class_1), len(class_2), len(class_3))
+    #     class_1 = np.random.choice(class_1, lowest, replace=False)
+    #     class_2 = np.random.choice(class_2, lowest, replace=False)
+    #     class_3 = np.random.choice(class_3, lowest, replace=False)
+
+    #     idx = np.concatenate((class_1, class_2, class_3))
+    #     return data[idx], target[idx] - 1
+
+    # train_data, train_target = undersapmling(train_data, train_target)
+
     if args.method == 'online_bagging':
         base_model = get_base_model(args)
         model = OnlineBagging(base_estimator=base_model, n_estimators=args.num_classifiers)
@@ -171,6 +186,12 @@ def training_stream(train_stream, seed_data, seed_target, test_data, test_target
             current_budget = -1
             budget_end = i
             print(f'budget ended at {i}')
+
+    # import pathlib
+    # import os
+    # p = pathlib.Path('./wine_model_no_filter_balanced')
+    # os.makedirs(p, exist_ok=True)
+    # model.save(p)
 
     print(f'budget after training = {current_budget}')
     print(f'final acc = {acc_list[-1]}')

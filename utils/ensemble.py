@@ -1,4 +1,6 @@
 import numpy as np
+import pathlib
+import pickle
 
 
 def get_model_dataset(data, target):
@@ -82,3 +84,50 @@ class Ensemble:
                 model.partial_fit(model_data, model_target)
             else:
                 model.partial_fit(data, target)
+
+    def save(self, path: pathlib.Path):
+        if not path.exists():
+            raise ValueError("Path must exist")
+
+        for i, model in enumerate(self.models):
+            with open(path / f'model_{i}.sav', 'wb') as f:
+                pickle.dump(model, f)
+        with open(path / f'model_diversify.sav', 'wb') as f:
+            pickle.dump(self.diversify, f)
+
+    def load(self, path: pathlib.Path):
+        if not path.exists():
+            raise ValueError("Path must exist")
+
+        self.models = []
+        for i in range(9):  # TODO instead of hardcode list all models in directory
+            with open(path / f'model_{i}.sav', 'rb') as f:
+                model = pickle.load(f)
+                self.models.append(model)
+        with open(path / f'model_diversify.sav', 'rb') as f:
+            self.diversify = pickle.load(f)
+
+
+if __name__ == '__main__':
+    # test is model saving works
+    from main import *
+    seed_everything(42)
+
+    models = [MLPClassifier(hidden_layer_sizes=(100, 100), learning_rate_init=0.001, max_iter=5000, beta_1=0.9) for _ in range(9)]
+    model = utils.ensemble.Ensemble(models, diversify=False)
+    data_X = np.random.rand(100, 5)
+    data_y = np.random.randint(0, 2, size=(100,))
+    model.fit(data_X, data_y)
+    test_data = data_X[:5]
+    print(model.predict(test_data))
+    print(model.predict_proba(test_data))
+    import pathlib
+    import os
+    p = pathlib.Path('./model_test')
+    os.makedirs(p, exist_ok=True)
+    model.save(p)
+
+    model1 = utils.ensemble.Ensemble([], diversify=False)
+    model1.load(p)
+    print(model1.predict(test_data))
+    print(model1.predict_proba(test_data))
