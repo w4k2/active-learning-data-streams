@@ -30,7 +30,7 @@ def main(begin_acc):
     random_seed = 42
     mkl.set_num_threads(20)
     seed_everything(random_seed)
-    dataset_name = 'mushroom'
+    dataset_name = 'wine'
     seed_size = 1000
 
     train_data, train_target, test_data, test_target, num_classes = data.load_data.get_data(dataset_name, random_seed)
@@ -55,8 +55,8 @@ def main(begin_acc):
     train_stream = utils.stream.Stream(X_stream, y_stream)
     acc, budget_end, budget_after = training_stream(
         train_stream, seed_data, seed_target, test_data, test_target, model, num_classes, begin_acc)
-    np.save(f'results/begin_acc_{begin_acc}_acc.npy', acc)
-    np.save(f'results/begin_acc_{begin_acc}_budget_end.npy', budget_end)
+    np.save(f'results/begin_acc_{begin_acc}_dataset_{dataset_name}_acc.npy', acc)
+    np.save(f'results/begin_acc_{begin_acc}_dataset_{dataset_name}_budget_end.npy', budget_end)
 
 
 def training_stream(train_stream, seed_data, seed_target, test_data, test_target, model, num_classes, begin_acc):
@@ -104,12 +104,34 @@ def training_stream(train_stream, seed_data, seed_target, test_data, test_target
 
 def fit_until_accuracy(model, seed_data, seed_target, test_data, test_target, acc=0.9):
     current_acc = 0.0
+    classes = np.unique(seed_target)
+    print(classes)
+
     while current_acc < acc:
-        for i in range(0, len(seed_target), 50):
-            batch_data = seed_data[i:i+50, :]
-            batch_target = seed_target[i:i+50]
+        sizes = list(range(10, 50, 10)) + list(range(50, 200, 50)) + list(range(200, len(seed_target), 100))
+        for i in sizes:
+            models = [MLPClassifier(hidden_layer_sizes=(100, 100), learning_rate_init=args.lr, max_iter=5000, beta_1=args.beta1)
+                      for _ in range(args.num_classifiers)]
+            model = utils.ensemble.Ensemble(models, diversify=True)
+
+            def partial_fit(data, target, poisson_lambdas=None):
+                for model in models:
+                    num_repeats = np.random.poisson(lam=poisson_lambdas)
+                    num_repeats = np.minimum(num_repeats, 4)
+                    model_data, model_target = sample_data(data, target, num_repeats)
+                    model_target = np.ravel(model_target)
+                    model.partial_fit(model_data, model_target, classes=classes)
+            model.partial_fit = partial_fit
+
+            batch_data = seed_data[:i, :]
+            batch_target = seed_target[:i]
             lambdas = np.ones_like(batch_target)
-            model.partial_fit(batch_data, batch_target, lambdas)
+            if len(batch_data) < 100:
+                for _ in range(100):
+                    model.partial_fit(batch_data, batch_target, lambdas)
+            else:
+                model.fit(batch_data, batch_target)
+
             y_pred = model.predict(test_data)
             current_acc = balanced_accuracy_score(test_target, y_pred)
             print('current_acc = ', current_acc)
@@ -118,8 +140,25 @@ def fit_until_accuracy(model, seed_data, seed_target, test_data, test_target, ac
     return model
 
 
+def get_model(classes):
+    models = [MLPClassifier(hidden_layer_sizes=(100, 100), learning_rate_init=args.lr, max_iter=5000, beta_1=args.beta1)
+              for _ in range(args.num_classifiers)]
+    model = utils.ensemble.Ensemble(models, diversify=True)
+
+    def partial_fit(data, target, poisson_lambdas=None):
+        for model in models:
+            num_repeats = np.random.poisson(lam=poisson_lambdas)
+            num_repeats = np.minimum(num_repeats, 4)
+            model_data, model_target = sample_data(data, target, num_repeats)
+            model_target = np.ravel(model_target)
+            model.partial_fit(model_data, model_target, classes=classes)
+    model.partial_fit = partial_fit
+    return model
+
+
 if __name__ == '__main__':
-    main(0.5)
-    main(0.55)
-    main(0.6)
-    main(0.63)
+    for acc in [0.15, 0.2, 0.25, 0.3, 0.35, 0.4]:
+        print('experiments for begin acc = ', acc)
+        main(acc)
+
+    # main(0.99)
