@@ -28,7 +28,7 @@ class args:
 
 def main(begin_acc):
     random_seed = 42
-    mkl.set_num_threads(4)
+    mkl.set_num_threads(20)
     seed_everything(random_seed)
     dataset_name = 'mushroom'
     seed_size = 1000

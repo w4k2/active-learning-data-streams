@@ -1,3 +1,4 @@
+import seaborn as sns
 import numpy as np
 import random
 import os
@@ -59,32 +60,34 @@ def get_dataset2(size1, size2):
 
 
 def plot_data(X, y, subplot_idx):
-    plt.subplot(*subplot_idx)
-    classes = np.unique(y)
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+    with sns.axes_style("darkgrid"):
+        plt.subplot(*subplot_idx)
+        classes = np.unique(y)
+        colors = sns.color_palette("husl", 3)  # ['#1f77b4', '#ff7f0e', '#2ca02c']
 
-    for c in classes:
-        x1, y1 = X[np.argwhere(y == c).flatten()].T
-        plt.plot(x1, y1, '.', color=colors[int(c)], label=f"class {int(c)+1}")
+        for c in classes:
+            x1, y1 = X[np.argwhere(y == c).flatten()].T
+            plt.plot(x1, y1, '.', color=colors[int(c)], label=f"class {int(c)+1}")
 
-    plt.legend()
+        plt.legend()
 
 
 def plot_percentage(class_percentage, subplot_idx):
-    plt.subplot(*subplot_idx)
-    class_percentage = np.array(class_percentage)
-    cumulative = np.cumsum(class_percentage, axis=1)
-    num_classes = class_percentage.shape[1]
+    with sns.axes_style("darkgrid"):
+        plt.subplot(*subplot_idx)
+        class_percentage = np.array(class_percentage)
+        cumulative = np.cumsum(class_percentage, axis=1)
+        num_classes = class_percentage.shape[1]
 
-    x = list(range(len(cumulative)))
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
-    for i in range(num_classes-1, -1, -1):
-        plt.fill_between(x, np.zeros_like(x), cumulative[:, i], color=colors[i])
+        x = list(range(len(cumulative)))
+        colors = sns.color_palette("husl", 3)  # ['#1f77b4', '#ff7f0e', '#2ca02c']
+        for i in range(num_classes-1, -1, -1):
+            plt.fill_between(x, np.zeros_like(x), cumulative[:, i], color=colors[i])
 
-    plt.xlabel('iterations')
-    plt.ylabel('training set class percentage')
-    plt.xlim(0, len(class_percentage))
-    plt.ylim(0, 1)
+        plt.xlabel('iterations')
+        plt.ylabel('class percentage')
+        plt.xlim(0, len(class_percentage))
+        plt.ylim(0, 1)
 
 
 def experiment(X_train, y_train, X_stream, y_stream):
