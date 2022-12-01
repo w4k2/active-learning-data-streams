@@ -14,7 +14,7 @@ def main():
     table_from_results(dataset_list_part1, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
     # print('\n\n')
     dataset_list_part2 = ('nursery', 'mushroom', 'wine', 'abalone')
-    # table_from_results(dataset_list_part2, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
+    table_from_results(dataset_list_part2, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
 
     # print('\n\n\n\n')
     results_list = [
@@ -130,7 +130,7 @@ def find_best(table):
         best_idx_col = []
         best_acc = 0.0
         for i in range(table.shape[0]):
-            acc = round(table[i][column_idx], 4)
+            acc = round(table[i][column_idx], 3)
             if acc > best_acc:
                 best_acc = acc
                 best_idx_col.clear()
