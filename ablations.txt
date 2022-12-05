@@ -1,0 +1,496 @@
+seed size 500
+
+base
+
+experiments with random seed 315
+accuracy after training with seed = 0.3266701103774274
+budget ended at 1642
+budget after training = -1
+final acc = 0.4670351599619892
+experiments with random seed 316
+accuracy after training with seed = 0.34803952145415556
+budget ended at 1804
+budget after training = -1
+final acc = 0.4507164055456738
+experiments with random seed 317
+accuracy after training with seed = 0.34364620745108543
+budget ended at 1769
+budget after training = -1
+final acc = 0.4251185887283448
+experiments with random seed 318
+accuracy after training with seed = 0.3393016252040642
+budget ended at 1843
+budget after training = -1
+final acc = 0.41140415681879094
+experiments with random seed 319
+accuracy after training with seed = 0.3776199410345752
+budget ended at 1812
+budget after training = -1
+final acc = 0.4075052752125923
+
+-prior filter
+
+experiments with random seed 315
+accuracy after training with seed = 0.3266701103774274
+budget ended at 1790
+budget after training = -1
+final acc = 0.46706006188933025
+experiments with random seed 316
+accuracy after training with seed = 0.34803952145415556
+budget ended at 2058
+budget after training = -1
+final acc = 0.4660370848663532
+experiments with random seed 317
+accuracy after training with seed = 0.34364620745108543
+budget ended at 1907
+budget after training = -1
+final acc = 0.4257310494383665
+experiments with random seed 318
+accuracy after training with seed = 0.3393016252040642
+budget ended at 2229
+budget after training = -1
+final acc = 0.42452396384103697
+experiments with random seed 319
+accuracy after training with seed = 0.3776199410345752
+budget ended at 2120
+budget after training = -1
+final acc = 0.4317908433030384
+
+
+-smaller lambda after end of budget
+
+experiments with random seed 315
+accuracy after training with seed = 0.3266701103774274
+budget ended at 1636
+budget after training = -1
+final acc = 0.45404722107161133
+experiments with random seed 316
+accuracy after training with seed = 0.34803952145415556
+budget ended at 1923
+budget after training = -1
+final acc = 0.4264569576764698
+experiments with random seed 317
+accuracy after training with seed = 0.34364620745108543
+budget ended at 1760
+budget after training = -1
+final acc = 0.42411559172534774
+experiments with random seed 318
+accuracy after training with seed = 0.3393016252040642
+budget ended at 2139
+budget after training = -1
+final acc = 0.4052237031261422
+experiments with random seed 319
+accuracy after training with seed = 0.3776199410345752
+budget ended at 2019
+budget after training = -1
+final acc = 0.41879876221339635
+
+
+-self-labeling 
+
+experiments with random seed 315
+accuracy after training with seed = 0.3266701103774274
+budget ended at 1559
+budget after training = -1
+final acc = 0.4814453838844083
+experiments with random seed 316
+accuracy after training with seed = 0.34803952145415556
+budget ended at 1881
+budget after training = -1
+final acc = 0.46652966545649477
+experiments with random seed 317
+accuracy after training with seed = 0.34364620745108543
+budget ended at 1681
+budget after training = -1
+final acc = 0.4286011062108622
+experiments with random seed 318
+accuracy after training with seed = 0.3393016252040642
+budget ended at 1910
+budget after training = -1
+final acc = 0.3984303501376672
+experiments with random seed 319
+accuracy after training with seed = 0.3776199410345752
+budget ended at 1760
+budget after training = -1
+final acc = 0.4355806145074438
+
+
+-bootstrapped training
+
+experiments with random seed 315
+accuracy after training with seed = 0.3522413196559538
+budget ended at 1572
+budget after training = -1
+final acc = 0.42925508637703763
+experiments with random seed 316
+accuracy after training with seed = 0.38076942569625494
+budget ended at 1865
+budget after training = -1
+final acc = 0.46237981530664457
+experiments with random seed 317
+accuracy after training with seed = 0.35022670012913915
+budget ended at 1668
+budget after training = -1
+final acc = 0.44982451694646813
+experiments with random seed 318
+accuracy after training with seed = 0.3530186886284447
+budget ended at 1948
+budget after training = -1
+final acc = 0.41229248799980506
+experiments with random seed 319
+accuracy after training with seed = 0.37215340756804166
+budget ended at 1801
+budget after training = -1
+final acc = 0.4051774566896518
+
+
+
+seed size 100
+
+baseline:
+experiments with random seed 315
+accuracy after training with seed = 0.28960132550376455
+budget ended at 2500
+budget after training = -1
+final acc = 0.4488773178041471
+experiments with random seed 316
+accuracy after training with seed = 0.2936612655637046
+budget ended at 3074
+budget after training = -1
+final acc = 0.41484193854925566
+experiments with random seed 317
+accuracy after training with seed = 0.30309568480300186
+budget ended at 2891
+budget after training = -1
+final acc = 0.41410253161472677
+experiments with random seed 318
+accuracy after training with seed = 0.2958699836748617
+budget ended at 3119
+budget after training = -1
+final acc = 0.3793935332959723
+experiments with random seed 319
+accuracy after training with seed = 0.28031768231768234
+budget ended at 2827
+budget after training = -1
+final acc = 0.4184998416217929
+
+
+-prior filter
+
+experiments with random seed 315
+accuracy after training with seed = 0.28960132550376455
+budget after training = 87
+final acc = 0.409024828829707
+experiments with random seed 316
+accuracy after training with seed = 0.2936612655637046
+budget after training = 393
+final acc = 0.36382802563290373
+experiments with random seed 317
+accuracy after training with seed = 0.30309568480300186
+budget after training = 262
+final acc = 0.3602316220365001
+experiments with random seed 318
+accuracy after training with seed = 0.2958699836748617
+budget after training = 361
+final acc = 0.35812251163470676
+experiments with random seed 319
+accuracy after training with seed = 0.28031768231768234
+budget after training = 176
+final acc = 0.3824332740430302
+
+-smaller lambda after end of budget
+
+experiments with random seed 315
+accuracy after training with seed = 0.28960132550376455
+budget after training = 87
+final acc = 0.409024828829707
+experiments with random seed 316
+accuracy after training with seed = 0.2936612655637046
+budget after training = 393
+final acc = 0.36382802563290373
+experiments with random seed 317
+accuracy after training with seed = 0.30309568480300186
+budget after training = 262
+final acc = 0.3602316220365001
+experiments with random seed 318
+accuracy after training with seed = 0.2958699836748617
+budget after training = 361
+final acc = 0.35812251163470676
+experiments with random seed 319
+accuracy after training with seed = 0.28031768231768234
+budget after training = 176
+final acc = 0.3824332740430302
+
+-self-labeling 
+
+experiments with random seed 315
+accuracy after training with seed = 0.28960132550376455
+budget ended at 2246
+budget after training = -1
+final acc = 0.4207030043127604
+experiments with random seed 316
+accuracy after training with seed = 0.2936612655637046
+budget ended at 3163
+budget after training = -1
+final acc = 0.39590394970882775
+experiments with random seed 317
+accuracy after training with seed = 0.30309568480300186
+budget ended at 2821
+budget after training = -1
+final acc = 0.44670656173095197
+experiments with random seed 318
+accuracy after training with seed = 0.2958699836748617
+budget ended at 3014
+budget after training = -1
+final acc = 0.40939923491143004
+experiments with random seed 319
+accuracy after training with seed = 0.28031768231768234
+budget ended at 2371
+budget after training = -1
+final acc = 0.4142502375673107
+
+
+-bootstrapped training
+
+experiments with random seed 315
+accuracy after training with seed = 0.29264827855071757
+budget ended at 2629
+budget after training = -1
+final acc = 0.41192256523963844
+experiments with random seed 316
+accuracy after training with seed = 0.29373319363563266
+budget ended at 2988
+budget after training = -1
+final acc = 0.40822548183523794
+experiments with random seed 317
+accuracy after training with seed = 0.2959369898394289
+budget ended at 3423
+budget after training = -1
+final acc = 0.37428357008844815
+experiments with random seed 318
+accuracy after training with seed = 0.305138714943593
+budget ended at 3347
+budget after training = -1
+final acc = 0.40473175604882916
+experiments with random seed 319
+accuracy after training with seed = 0.2967732267732267
+budget ended at 2827
+budget after training = -1
+final acc = 0.35884486245461855
+
+
+
+
+
+
+
+
+
+
+
+
+mushroom dataset
+seed size 500
+
+base:
+experiments with random seed 315
+accuracy after training with seed = 0.6187266241256502
+budget after training = 1546
+final acc = 0.6268729828295343
+experiments with random seed 316
+accuracy after training with seed = 0.6149364797632411
+budget after training = 1625
+final acc = 0.6240940938413917
+experiments with random seed 317
+accuracy after training with seed = 0.639405655650796
+budget after training = 1394
+final acc = 0.6209341028519052
+experiments with random seed 318
+accuracy after training with seed = 0.6172527060669497
+budget after training = 1625
+final acc = 0.6266685956415524
+experiments with random seed 319
+accuracy after training with seed = 0.6343294740889478
+budget after training = 1510
+final acc = 0.6351047860585606
+
+- prior filter
+
+experiments with random seed 315
+accuracy after training with seed = 0.6187266241256502
+budget after training = 1562
+final acc = 0.6249718421451236
+experiments with random seed 316
+accuracy after training with seed = 0.6149364797632411
+budget after training = 1642
+final acc = 0.6240940938413917
+experiments with random seed 317
+accuracy after training with seed = 0.639405655650796
+budget after training = 1574
+final acc = 0.6361830377082225
+experiments with random seed 318
+accuracy after training with seed = 0.6172527060669497
+budget after training = 1658
+final acc = 0.6266685956415524
+experiments with random seed 319
+accuracy after training with seed = 0.6343294740889478
+budget after training = 1574
+final acc = 0.6345940608287343
+
+- smaller lambda
+
+experiments with random seed 315
+accuracy after training with seed = 0.6187266241256502
+budget after training = 1562
+final acc = 0.6249718421451236
+experiments with random seed 316
+accuracy after training with seed = 0.6149364797632411
+budget after training = 1642
+final acc = 0.6240940938413917
+experiments with random seed 317
+accuracy after training with seed = 0.639405655650796
+budget after training = 1574
+final acc = 0.6361830377082225
+experiments with random seed 318
+accuracy after training with seed = 0.6172527060669497
+budget after training = 1658
+final acc = 0.6266685956415524
+experiments with random seed 319
+accuracy after training with seed = 0.6343294740889478
+budget after training = 1574
+final acc = 0.6345940608287343
+
+-self-labeling 
+
+experiments with random seed 315
+accuracy after training with seed = 0.6187266241256502
+budget after training = 1429
+final acc = 0.6311359849617636
+experiments with random seed 316
+accuracy after training with seed = 0.6149364797632411
+budget after training = 1493
+final acc = 0.6230891497104596
+experiments with random seed 317
+accuracy after training with seed = 0.639405655650796
+budget after training = 1299
+final acc = 0.6224662785413843
+experiments with random seed 318
+accuracy after training with seed = 0.6172527060669497
+budget after training = 1546
+final acc = 0.6299955918392711
+experiments with random seed 319
+accuracy after training with seed = 0.6343294740889478
+budget after training = 1170
+final acc = 0.6345940608287343
+
+-bootstrapped training
+
+experiments with random seed 315
+accuracy after training with seed = 0.6147136443255126
+budget after training = 1632
+final acc = 0.6239547610077794
+experiments with random seed 316
+accuracy after training with seed = 0.6227036783868074
+budget after training = 1666
+final acc = 0.624604819071218
+experiments with random seed 317
+accuracy after training with seed = 0.6209341028519052
+budget after training = 1603
+final acc = 0.621028286021664
+experiments with random seed 318
+accuracy after training with seed = 0.6187848817564288
+budget after training = 1672
+final acc = 0.6266685956415524
+experiments with random seed 319
+accuracy after training with seed = 0.6330618851392552
+budget after training = 1643
+final acc = 0.6289595769719237
+
+
+
+different order:
+seed size 500
+
+base
+
+experiments with random seed 315
+accuracy after training with seed = 0.3266701103774274
+budget ended at 1642
+budget after training = -1
+final acc = 0.4670351599619892
+experiments with random seed 316
+accuracy after training with seed = 0.34803952145415556
+budget ended at 1804
+budget after training = -1
+final acc = 0.4507164055456738
+experiments with random seed 317
+accuracy after training with seed = 0.34364620745108543
+budget ended at 1769
+budget after training = -1
+final acc = 0.4251185887283448
+experiments with random seed 318
+accuracy after training with seed = 0.3393016252040642
+budget ended at 1843
+budget after training = -1
+final acc = 0.41140415681879094
+experiments with random seed 319
+accuracy after training with seed = 0.3776199410345752
+budget ended at 1812
+budget after training = -1
+final acc = 0.4075052752125923
+
+-smaller lambda
+
+experiments with random seed 315
+accuracy after training with seed = 0.3266701103774274
+budget ended at 1642
+budget after training = -1
+final acc = 0.4634107843376136
+experiments with random seed 316
+accuracy after training with seed = 0.34803952145415556
+budget ended at 1804
+budget after training = -1
+final acc = 0.44926186009112834
+experiments with random seed 317
+accuracy after training with seed = 0.34364620745108543
+budget ended at 1769
+budget after training = -1
+final acc = 0.4224103701176872
+experiments with random seed 318
+accuracy after training with seed = 0.3393016252040642
+budget ended at 1843
+budget after training = -1
+final acc = 0.41774474306181625
+experiments with random seed 319
+accuracy after training with seed = 0.3776199410345752
+budget ended at 1812
+budget after training = -1
+final acc = 0.3996711093784265
+
+-prior filter
+
+experiments with random seed 315
+accuracy after training with seed = 0.3266701103774274
+budget ended at 1790
+budget after training = -1
+final acc = 0.46632479715406533
+experiments with random seed 316
+accuracy after training with seed = 0.34803952145415556
+budget ended at 2058
+budget after training = -1
+final acc = 0.4580521429789723
+experiments with random seed 317
+accuracy after training with seed = 0.34364620745108543
+budget ended at 1907
+budget after training = -1
+final acc = 0.4335141931239492
+experiments with random seed 318
+accuracy after training with seed = 0.3393016252040642
+budget ended at 2229
+budget after training = -1
+final acc = 0.41074788626008135
+experiments with random seed 319
+accuracy after training with seed = 0.3776199410345752
+budget ended at 2120
+budget after training = -1
+final acc = 0.4259686654808606

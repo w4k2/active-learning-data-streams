@@ -14,7 +14,7 @@ def main():
     table_from_results(dataset_list_part1, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
     # print('\n\n')
     dataset_list_part2 = ('nursery', 'mushroom', 'wine', 'abalone')
-    table_from_results(dataset_list_part2, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
+    # table_from_results(dataset_list_part2, results_list, 6, 'budget & 0.1 & 0.2 & 0.3 & 0.4 & 0.5 \\\\ \n')
 
     # print('\n\n\n\n')
     results_list = [
@@ -24,7 +24,7 @@ def main():
     ]
     # table_from_results(dataset_list_part1, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
     # print('\n\n')
-    table_from_results(dataset_list_part2, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
+    # table_from_results(dataset_list_part2, results_list, 4, 'seed size & 100 & 500 & 1000 \\\\ \n')
 
 
 def table_from_results(dataset_list, results_list, num_columns, custom_line):
@@ -46,14 +46,46 @@ def table_from_results(dataset_list, results_list, num_columns, custom_line):
     for dataset_name in dataset_list:
         whole_table = add_header(whole_table, dataset_name, num_columns=num_columns, custom_line=custom_line)
         table, table_std = generate_averaged_table(results_list, dataset_name, method_names)
+        table = np.array(table)[2:, :]
+        table = np.concatenate((table[:4, :], table[5:6, :], table[7:, :]), axis=0)  # for bigger datasets, to skip NaNs
+        # print(table)
+        best = np.max(table, axis=0)
+        ours = table[-1, :]
+        print(dataset_name)
+        # print(table)
+        # print(best)
+        print(ours - best)
+        # plot_3d(table, dataset_name)
+        continue
+        # exit()
         best_idx = find_best(table)
         table = add_method_names(method_names, table, table_std)
         latex_table = tabulate.tabulate(table, tablefmt='latex', numalign='center')
         latex_table = bold_best_results(latex_table, best_idx)
 
         whole_table = add_table_section(whole_table, latex_table)
-    whole_table += '\end{tabular}'
-    print(whole_table)
+    # whole_table += '\end{tabular}'
+    # print(whole_table)
+
+
+def plot_3d(table, dataset_name):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+
+    # colors = ['r', 'g', 'b', 'y']
+    colors = sns.color_palette('husl', table.shape[0])
+    yticks = range(table.shape[0])  # [3, 2, 1, 0]
+    for c, k in zip(colors, yticks):
+        # Generate the random data for the y=k 'layer'.
+        xs = np.arange(table.shape[1])
+        ys = table[k]
+
+        # Plot the bar graph given by xs and ys on the plane y=k with 80% opacity.
+        ax.bar(xs, ys, zs=k, zdir='y', color=c, alpha=0.8)
+    plt.title(f'dataset {dataset_name}')
+    plt.show()
 
 
 def add_method_names(method_names, table, table_std):
