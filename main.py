@@ -4,7 +4,7 @@ import math
 import os
 import random
 
-import mkl
+# import mkl
 import numpy as np
 import sklearn.model_selection
 import torch
@@ -21,17 +21,17 @@ import utils.ensemble
 import utils.mlp_pytorch
 import utils.new_model
 import utils.stream
-from utils.online_bagging import OnlineBagging
+# from utils.online_bagging import OnlineBagging
 
 
 def main():
     args = parse_args()
-    acc, budget_end, _ = do_experiment(args)
-    save_results(args, acc, budget_end)
+    acc, budget_end, _, incorrect_fraction = do_experiment(args)
+    save_results(args, acc, budget_end, incorrect_fraction)
 
 
 def do_experiment(args):
-    mkl.set_num_threads(20)
+    # mkl.set_num_threads(20)
     seed_everything(args.random_seed)
 
     train_data, train_target, test_data, test_target, num_classes = data.load_data.get_data(args.dataset_name, args.random_seed)
@@ -52,8 +52,9 @@ def do_experiment(args):
     # train_data, train_target = undersapmling(train_data, train_target)
 
     if args.method == 'online_bagging':
-        base_model = get_base_model(args)
-        model = OnlineBagging(base_estimator=base_model, n_estimators=args.num_classifiers)
+        pass
+        # base_model = get_base_model(args)
+        # model = OnlineBagging(base_estimator=base_model, n_estimators=args.num_classifiers)
     elif args.method in ('all_labeled_ensemble', 'ours', 'vote_entropy', 'consensus_entropy', 'max_disagreement', 'min_margin'):
         models = [get_base_model(args) for _ in range(args.num_classifiers)]
         diversify = args.method == 'ours'
@@ -65,13 +66,14 @@ def do_experiment(args):
         acc = training_full_dataset(model, train_data, train_target, test_data, test_target)
         budget_end = -1
         budget_after = 0
+        incorrect_fraction = []
     else:
         X_stream, seed_data, y_stream, seed_target = sklearn.model_selection.train_test_split(train_data, train_target,
                                                                                               test_size=args.seed_size, random_state=args.random_seed, stratify=train_target)
         train_stream = utils.stream.Stream(X_stream, y_stream)
-        acc, budget_end, budget_after = training_stream(
+        acc, budget_end, budget_after, incorrect_fraction = training_stream(
             train_stream, seed_data, seed_target, test_data, test_target, model, args, num_classes)
-    return acc, budget_end, budget_after
+    return acc, budget_end, budget_after, incorrect_fraction
 
 
 def parse_args():
@@ -146,6 +148,8 @@ def training_stream(train_stream, seed_data, seed_target, test_data, test_target
     print(f'accuracy after training with seed = {acc}')
 
     acc_list = list()
+    incorrect_num = 0
+    incorrect_fraction = list()
     budget_end = -1
     current_budget = math.floor(len(train_stream) * args.budget)
     strategy = get_strategy(model, args, num_classes)
@@ -174,8 +178,11 @@ def training_stream(train_stream, seed_data, seed_target, test_data, test_target
                 train, label, poisson_lambda = strategy.use_self_labeling(obj, current_budget, args.budget)
                 if train:
                     seed_data, seed_target = update_training_data(seed_data, seed_target, obj, label)
+                    if label != target:
+                        incorrect_num += 1
                     lambdas = np.concatenate((lambdas, [poisson_lambda]), axis=0)
                     seed_data, seed_target, lambdas = partial_fit(seed_data, seed_target, model, args, lambdas)
+            incorrect_fraction.append(incorrect_num / len(seed_data))
         else:  # active learning strategy
             if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
                 seed_data, seed_target = update_training_data(seed_data, seed_target, obj, target)
@@ -195,7 +202,7 @@ def training_stream(train_stream, seed_data, seed_target, test_data, test_target
 
     print(f'budget after training = {current_budget}')
     print(f'final acc = {acc_list[-1]}')
-    return acc_list, budget_end, current_budget
+    return acc_list, budget_end, current_budget, incorrect_fraction
 
 
 def partial_fit(seed_data, seed_target, model, args, lambdas=None):
@@ -242,12 +249,12 @@ def get_strategy(model, args, num_classes):
     return strategy
 
 
-def save_results(args, acc, budget_end):
+def save_results(args, acc, budget_end, incorrect_fraction):
     os.makedirs(f'results/{args.method}', exist_ok=True)
     experiment_parameters = f'{args.base_model}_{args.dataset_name}_seed_{args.seed_size}_budget_{args.budget}_random_seed_{args.random_seed}'
     np.save(f'results/{args.method}/acc_{experiment_parameters}.npy', acc)
-    np.save(
-        f'results/{args.method}/budget_end_{experiment_parameters}.npy', budget_end)
+    np.save(f'results/{args.method}/budget_end_{experiment_parameters}.npy', budget_end)
+    np.save(f'results/{args.method}/incorrect_fraction_{experiment_parameters}.npy', incorrect_fraction)
 
 
 if __name__ == '__main__':
