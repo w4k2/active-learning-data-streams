@@ -1,6 +1,6 @@
 name: active-learning
 channels:
-  - conda-forget
+  - conda-forge
   - defaults
 dependencies:
   - python=3.8.5
