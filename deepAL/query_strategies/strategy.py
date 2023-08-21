@@ -1,15 +1,21 @@
 import numpy as np
 import torch
+import abc
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-class Strategy:
+class Strategy(abc.ABC):
     def __init__(self, dataset, net):
         self.dataset = dataset
         self.net = net
 
+    @abc.abstractmethod
     def query(self, n):
+        pass
+
+    @abc.abstractmethod
+    def should_label(self, X, y, budget):
         pass
 
     def update(self, pos_idxs, neg_idxs=None):

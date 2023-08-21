@@ -14,12 +14,27 @@ class Data:
         self.n_test = len(X_test)
         
         self.labeled_idxs = np.zeros(self.n_pool, dtype=bool)
+        self.is_initialized = False
+
+    def __next__(self):
+        if not self.is_initialized:
+            raise ValueError("Have to call initialize_labels before iterating")
         
+        _, unlabeled_data = self.get_unlabeled_data()
+
+        for i in range(len(unlabeled_data)):
+            x, y, idx = unlabeled_data[i]
+            yield x, y, idx
+
+    def __iter__(self):
+        return next(self)
+            
     def initialize_labels(self, num):
         # generate initial labeled pool
         tmp_idxs = np.arange(self.n_pool)
         np.random.shuffle(tmp_idxs)
         self.labeled_idxs[tmp_idxs[:num]] = True
+        self.is_initialized = True
     
     def get_labeled_data(self):
         labeled_idxs = np.arange(self.n_pool)[self.labeled_idxs]

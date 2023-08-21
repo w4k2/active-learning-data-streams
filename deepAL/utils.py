@@ -9,23 +9,23 @@ from query_strategies import RandomSampling, LeastConfidence, MarginSampling, En
 
 params = {'MNIST':
               {'n_epoch': 10, 
-               'train_args':{'batch_size': 64, 'num_workers': 1},
-               'test_args':{'batch_size': 1000, 'num_workers': 1},
+               'train_args':{'batch_size': 64, 'num_workers': 10},
+               'test_args':{'batch_size': 1000, 'num_workers': 10},
                'optimizer_args':{'lr': 0.01, 'momentum': 0.5}},
           'FashionMNIST':
               {'n_epoch': 10, 
-               'train_args':{'batch_size': 64, 'num_workers': 1},
-               'test_args':{'batch_size': 1000, 'num_workers': 1},
+               'train_args':{'batch_size': 64, 'num_workers': 10},
+               'test_args':{'batch_size': 1000, 'num_workers': 10},
                'optimizer_args':{'lr': 0.01, 'momentum': 0.5}},
           'SVHN':
               {'n_epoch': 20, 
-               'train_args':{'batch_size': 64, 'num_workers': 1},
-               'test_args':{'batch_size': 1000, 'num_workers': 1},
+               'train_args':{'batch_size': 64, 'num_workers': 10},
+               'test_args':{'batch_size': 1000, 'num_workers': 10},
                'optimizer_args':{'lr': 0.01, 'momentum': 0.5}},
           'CIFAR10':
               {'n_epoch': 20, 
-               'train_args':{'batch_size': 64, 'num_workers': 1},
-               'test_args':{'batch_size': 1000, 'num_workers': 1},
+               'train_args':{'batch_size': 64, 'num_workers': 10},
+               'test_args':{'batch_size': 1000, 'num_workers': 10},
                'optimizer_args':{'lr': 0.05, 'momentum': 0.3}}
           }
 

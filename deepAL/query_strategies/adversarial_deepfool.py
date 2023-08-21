@@ -66,4 +66,3 @@ class AdversarialDeepFool(Strategy):
 
         return unlabeled_idxs[dis.argsort()[:n]]
 
-

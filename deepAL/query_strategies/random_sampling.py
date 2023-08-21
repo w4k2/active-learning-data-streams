@@ -7,3 +7,7 @@ class RandomSampling(Strategy):
 
     def query(self, n):
         return np.random.choice(np.where(self.dataset.labeled_idxs==0)[0], n, replace=False)
+
+    def should_label(self, X, y, budget):
+        eta_t = np.random.uniform(0, 1)
+        return eta_t < budget

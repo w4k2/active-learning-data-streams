@@ -7,10 +7,11 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 class Net:
-    def __init__(self, net, params, device):
+    def __init__(self, net, params, device, verbose_training=False):
         self.net = net
         self.params = params
         self.device = device
+        self.verbose_training = verbose_training
         
     def train(self, data):
         n_epoch = self.params['n_epoch']
@@ -19,7 +20,10 @@ class Net:
         optimizer = optim.SGD(self.clf.parameters(), **self.params['optimizer_args'])
 
         loader = DataLoader(data, shuffle=True, **self.params['train_args'])
-        for epoch in tqdm(range(1, n_epoch+1), ncols=100):
+        epochs_iter = range(1, n_epoch+1)
+        if self.verbose_training:
+            epochs_iter = tqdm(epochs_iter, ncols=100)
+        for epoch in epochs_iter:
             for batch_idx, (x, y, idxs) in enumerate(loader):
                 x, y = x.to(self.device), y.to(self.device)
                 optimizer.zero_grad()
