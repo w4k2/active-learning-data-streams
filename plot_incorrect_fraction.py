@@ -17,15 +17,15 @@ def main():
         for i, seed_size in enumerate([100, 500, 1000]):
             for j, filepath in enumerate(results):
                 acc = np.load(filepath.format('acc', 'wine', seed_size, budget, random_seed))
-                plt.subplot(3, 2, 2*i+1)
+                plt.subplot(2, 3, i+1)
                 plt.plot(acc, label=labels[j], color=colors[j])
                 incorrect_frac = np.load(filepath.format('incorrect_fraction', 'wine', seed_size, budget, random_seed))
-                plt.subplot(3, 2, 2*i+2)
+                plt.subplot(2, 3, i+4)
                 plt.plot(incorrect_frac, label=labels[j], color=colors[j])
 
         seed_sizes = ('seed size 100', 'seed size 500', 'seed size 1000')
         for i in range(1, 7):
-            plt.subplot(3, 2, i)
+            plt.subplot(2, 3, i)
             from matplotlib.ticker import StrMethodFormatter
             plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.2f}'))  # 2 decimal places
             plt.legend()
@@ -34,9 +34,11 @@ def main():
             else:
                 plt.ylabel('fraction of incorrect labels')
 
-        plt.subplot(3, 2, 5)
+        plt.subplot(2, 3, 4)
         plt.xlabel('iterations')
-        plt.subplot(3, 2, 6)
+        plt.subplot(2, 3, 5)
+        plt.xlabel('iterations')
+        plt.subplot(2, 3, 6)
         plt.xlabel('iterations')
         plt.show()
 
