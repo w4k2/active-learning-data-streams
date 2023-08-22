@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
 class Net:
@@ -44,7 +44,7 @@ class Net:
                 preds[idxs] = pred.cpu()
         return preds
     
-    def predict_prob(self, data):
+    def predict_prob(self, data: Dataset):
         self.clf.eval()
         probs = torch.zeros([len(data), len(np.unique(data.Y))])
         loader = DataLoader(data, shuffle=False, **self.params['test_args'])
@@ -55,6 +55,15 @@ class Net:
                 prob = F.softmax(out, dim=1)
                 probs[idxs] = prob.cpu()
         return probs
+    
+    def predict_prob_raw_data(self, x: torch.TensorType):
+        self.clf.eval()
+        with torch.no_grad():
+            x = x.to(self.device)
+            out, _ = self.clf(x)
+            prob = F.softmax(out, dim=1)
+            prob = prob.cpu()
+        return prob
     
     def predict_prob_dropout(self, data, n_drop=10):
         self.clf.train()
@@ -70,7 +79,7 @@ class Net:
         probs /= n_drop
         return probs
     
-    def predict_prob_dropout_split(self, data, n_drop=10):
+    def predict_prob_dropout_split(self, data: Dataset, n_drop=10):
         self.clf.train()
         probs = torch.zeros([n_drop, len(data), len(np.unique(data.Y))])
         loader = DataLoader(data, shuffle=False, **self.params['test_args'])
@@ -81,6 +90,18 @@ class Net:
                     out, e1 = self.clf(x)
                     prob = F.softmax(out, dim=1)
                     probs[i][idxs] += F.softmax(out, dim=1).cpu()
+        return probs
+
+    def predict_prob_dropout_split_raw_data(self, x: torch.TensorType, n_drop=10):
+        self.clf.train()
+        probs = list()
+        for i in range(n_drop):
+            with torch.no_grad():
+                x = x.to(self.device)
+                out, _ = self.clf(x)
+                prob = F.softmax(out, dim=1)
+                probs.append(F.softmax(out, dim=1).cpu())
+        probs = torch.stack(probs, dim=0)
         return probs
     
     def get_embeddings(self, data):

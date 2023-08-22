@@ -2,8 +2,8 @@ import numpy as np
 from .strategy import Strategy
 
 class MarginSampling(Strategy):
-    def __init__(self, dataset, net):
-        super(MarginSampling, self).__init__(dataset, net)
+    def __init__(self, dataset, net, threshold):
+        super(MarginSampling, self).__init__(dataset, net, threshold)
 
     def query(self, n):
         unlabeled_idxs, unlabeled_data = self.dataset.get_unlabeled_data()
@@ -11,3 +11,9 @@ class MarginSampling(Strategy):
         probs_sorted, idxs = probs.sort(descending=True)
         uncertainties = probs_sorted[:, 0] - probs_sorted[:,1]
         return unlabeled_idxs[uncertainties.sort()[1][:n]]
+
+    def should_label(self, X, budget):
+        probs = self.predict_prob_raw_data(X)
+        probs_sorted, _ = probs.sort(descending=True)
+        uncertainties = probs_sorted[:, 0] - probs_sorted[:,1]
+        return uncertainties < self.threshold
