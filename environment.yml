@@ -13,6 +13,7 @@ dependencies:
   - pandas
   - autopep8
   - pytorch
+  - torchvision
   - tabulate
   - seaborn
   - pip:

@@ -10,25 +10,14 @@ from utils import get_dataset, get_net, get_strategy
 
 def main():
     args = parse_args()
-    seed_everything(args.seed)
-
-    
-    device = torch.device(args.device)
-    dataset = get_dataset(args.dataset_name)
-    net = get_net(args.dataset_name, device)
-    strategy_class = get_strategy(args.strategy_name)
-    if strategy_class.__name__ == 'SelfLabelingSelectiveSampling':
-        strategy = strategy_class(dataset, net, args.threshold, args.n_init_labeled)
-    else:
-        strategy = strategy_class(dataset, net, args.threshold)
-
-    acc_list, budget_end = training_stream(args, dataset, strategy)
+    acc_list, budget_end = do_experiment(args)
     save_results(args, acc_list, budget_end)
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', type=int, default=42, help="random seed")
-    parser.add_argument('--n_init_labeled', type=int, default=10000, help="number of init labeled samples")
+    parser.add_argument('--n_init_labeled', type=int, default=1000, help="number of init labeled samples")
     parser.add_argument('--dataset_name', type=str, default="MNIST", choices=["MNIST", "FashionMNIST", "SVHN", "CIFAR10"], help="dataset")
     parser.add_argument('--budget', type=float, default=0.3)
     parser.add_argument('--update_size', type=int, default=256)
@@ -54,6 +43,22 @@ def parse_args():
                                 ], help="query strategy")
     args = parser.parse_args()
     return args
+
+
+def do_experiment(args):
+    seed_everything(args.seed)
+    device = torch.device(args.device)
+    dataset = get_dataset(args.dataset_name)
+    net = get_net(args.dataset_name, device)
+    strategy_class = get_strategy(args.strategy_name)
+    if strategy_class.__name__ == 'SelfLabelingSelectiveSampling':
+        strategy = strategy_class(dataset, net, args.threshold, args.n_init_labeled)
+    else:
+        strategy = strategy_class(dataset, net, args.threshold)
+
+    acc_list, budget_end = training_stream(args, dataset, strategy)
+    return acc_list, budget_end
+
 
 def seed_everything(seed):
     random.seed(seed)
