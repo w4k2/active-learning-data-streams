@@ -12,9 +12,8 @@ def main():
     args = parse_args()
     seed_everything(args.seed)
 
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
-
+    
+    device = torch.device(args.device)
     dataset = get_dataset(args.dataset_name)
     net = get_net(args.dataset_name, device)
     strategy_class = get_strategy(args.strategy_name)
@@ -34,6 +33,7 @@ def parse_args():
     parser.add_argument('--budget', type=float, default=0.3)
     parser.add_argument('--update_size', type=int, default=256)
     parser.add_argument('--threshold', type=float, default=None, help='sampling threshold for AL method')
+    parser.add_argument('--device', type=str, default='cuda:0')
 
     parser.add_argument('--strategy_name', type=str, default="RandomSampling", 
                         choices=[
