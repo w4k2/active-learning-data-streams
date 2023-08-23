@@ -5,7 +5,7 @@ from nets import Net, MNIST_Net, SVHN_Net, CIFAR10_Net
 from query_strategies import RandomSampling, LeastConfidence, MarginSampling, EntropySampling, \
                              LeastConfidenceDropout, MarginSamplingDropout, EntropySamplingDropout, \
                              KMeansSampling, KCenterGreedy, BALDDropout, \
-                             AdversarialBIM, AdversarialDeepFool, ConsensusEntropy
+                             AdversarialBIM, AdversarialDeepFool, ConsensusEntropy, SelfLabelingSelectiveSampling
 
 params = {'MNIST':
               {'n_epoch': 10, 
@@ -93,6 +93,8 @@ def get_strategy(name):
         return AdversarialDeepFool
     elif name == 'ConsensusEntropy':
         return ConsensusEntropy
+    elif name == 'Ours':
+        return SelfLabelingSelectiveSampling
     else:
         raise NotImplementedError
     

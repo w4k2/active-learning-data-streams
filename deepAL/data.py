@@ -10,10 +10,12 @@ class Data:
         self.Y_test = Y_test
         self.handler = handler
         
+        self.n_classes = len(torch.unique(Y_train))
         self.n_pool = len(X_train)
         self.n_test = len(X_test)
         
         self.labeled_idxs = np.zeros(self.n_pool, dtype=bool)
+        self.poisson_lambdas = torch.ones_like(Y_train)
         self.is_initialized = False
 
     def __next__(self):

@@ -17,15 +17,15 @@ def main():
 
     dataset = get_dataset(args.dataset_name)
     net = get_net(args.dataset_name, device)
-    strategy = get_strategy(args.strategy_name)(dataset, net, args.threshold)
+    strategy_class = get_strategy(args.strategy_name)
+    if strategy_class.__name__ == 'SelfLabelingSelectiveSampling':
+        strategy = strategy_class(dataset, net, args.threshold, args.n_init_labeled)
+    else:
+        strategy = strategy_class(dataset, net, args.threshold)
 
     acc_list, budget_end = training_stream(args, dataset, strategy)
     save_results(args, acc_list, budget_end)
 
-
-
-    
-    
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', type=int, default=42, help="random seed")
@@ -50,6 +50,7 @@ def parse_args():
                             "AdversarialBIM", 
                             "AdversarialDeepFool",
                             'ConsensusEntropy',
+                            'Ours',
                                 ], help="query strategy")
     args = parser.parse_args()
     return args
@@ -90,15 +91,21 @@ def training_stream(args, dataset, strategy):
         if current_budget > 0 and strategy.should_label(X_train, args.budget):
             current_budget -= 1
             strategy.update([idx])
-
             num_new_samples += 1
-            if num_new_samples == args.update_size:
-                num_new_samples = 0
-                strategy.train()
+        elif hasattr(strategy, 'use_self_labeling'):
+            use_sl, label, poisson_lambda = strategy.use_self_labeling(X_train, current_budget)
+            if use_sl:
+                label = torch.from_numpy(label)
+                strategy.update_self_labeling([idx], label, poisson_lambda)
+                num_new_samples += 1
 
-                preds = strategy.predict(dataset.get_test_data())
-                last_acc = dataset.cal_test_acc(preds)
-                pbar.set_description("test acc {:.4f}, remaning budget {}".format(last_acc, current_budget))
+        if num_new_samples == args.update_size:
+            num_new_samples = 0
+            strategy.train()
+
+            preds = strategy.predict(dataset.get_test_data())
+            last_acc = dataset.cal_test_acc(preds)
+            pbar.set_description("test acc {:.4f}, remaning budget {}".format(last_acc, current_budget))
 
         acc_list.append(last_acc)
         if current_budget == 0:
