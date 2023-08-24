@@ -31,10 +31,12 @@ class Net:
                 loss = F.cross_entropy(out, y)
                 loss.backward()
                 optimizer.step()
+                break
+            break
 
     def predict(self, data):
         self.clf.eval()
-        preds = torch.zeros(len(data), dtype=data.Y.dtype)
+        preds = torch.zeros(size=[len(data)], dtype=torch.long)
         loader = DataLoader(data, shuffle=False, **self.params['test_args'])
         with torch.no_grad():
             for x, y, idxs in loader:

@@ -10,12 +10,12 @@ class Data:
         self.Y_test = Y_test
         self.handler = handler
         
-        self.n_classes = len(torch.unique(Y_train))
+        self.n_classes = len(torch.unique(Y_train)) if type(Y_train) == torch.Tensor else len(np.unique(Y_train))
         self.n_pool = len(X_train)
         self.n_test = len(X_test)
         
         self.labeled_idxs = np.zeros(self.n_pool, dtype=bool)
-        self.poisson_lambdas = torch.ones_like(Y_train)
+        self.poisson_lambdas = torch.ones(size=(len(Y_train),))
         self.is_initialized = False
 
     def __next__(self):
@@ -53,13 +53,16 @@ class Data:
         return self.handler(self.X_test, self.Y_test)
     
     def cal_test_acc(self, preds):
-        return 1.0 * (self.Y_test==preds).sum().item() / self.n_test
+        Y_test = torch.Tensor(self.Y_test)
+        return 1.0 * (Y_test==preds).sum().item() / self.n_test
 
     
 def get_MNIST(handler, use_validation_set):
     raw_train = datasets.MNIST('./data/MNIST', train=True, download=True)
     raw_test = datasets.MNIST('./data/MNIST', train=False, download=True)
-    data = get_data(raw_train, raw_test, handler, use_validation_set)
+    train_data, train_targets = raw_train.data, raw_train.targets
+    test_data, test_targets = raw_test.data, raw_test.targets
+    data = get_data(train_data, train_targets, test_data, test_targets, handler, use_validation_set)
     return data
 
 def get_FashionMNIST(handler, use_validation_set):
@@ -71,25 +74,31 @@ def get_FashionMNIST(handler, use_validation_set):
 def get_SVHN(handler, use_validation_set):
     data_train = datasets.SVHN('./data/SVHN', split='train', download=True)
     data_test = datasets.SVHN('./data/SVHN', split='test', download=True)
-    data = get_data(data_train, data_test, handler, use_validation_set)
+    train_data, train_targets = data_train.data, data_train.labels
+    test_data, test_targets = data_test.data, data_test.labels
+    data = get_data(train_data, train_targets, test_data, test_targets, handler, use_validation_set)
     return data
 
 def get_CIFAR10(handler, use_validation_set):
     data_train = datasets.CIFAR10('./data/CIFAR10', train=True, download=True)
     data_test = datasets.CIFAR10('./data/CIFAR10', train=False, download=True)
-    data = get_data(data_train, data_test, handler, use_validation_set)
+    data_train.targets = np.array(data_train.targets)
+    data_test.targets = np.array(data_test.targets)
+    train_data, train_targets = data_train.data, data_train.targets
+    test_data, test_targets = data_test.data, data_test.targets
+    data = get_data(train_data, train_targets, test_data, test_targets, handler, use_validation_set)
     return data
 
-def get_data(raw_train, raw_test, handler, use_validation_set):
-    train_data = raw_train.data[:40000]
-    train_targets = raw_train.targets[:40000]
+def get_data(train_data, train_targets, test_data, test_targets, handler, use_validation_set):
+    train_data = train_data[:40000]
+    train_targets = train_targets[:40000]
     if use_validation_set:
         test_data = train_data[30000:]
         test_targets = train_targets[30000:]
         train_data = train_data[:30000]
         train_targets = train_targets[:30000]
     else:
-        test_data = raw_test.data[:40000]
-        test_targets = raw_test.targets[:40000]
+        test_data = test_data[:40000]
+        test_targets = test_targets[:40000]
     data = Data(train_data, train_targets, test_data, test_targets, handler)
     return data
