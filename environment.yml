@@ -2,9 +2,11 @@ name: active-learning
 channels:
   - conda-forge
   - anaconda
+  - pytorch
+  - nvidia
   - defaults
 dependencies:
-  - python=3.8.5
+  - python
   - numpy
   - scikit-learn
   - pip
@@ -12,6 +14,7 @@ dependencies:
   - tqdm
   - pandas
   - autopep8
+  - pytorch-cuda=11.8
   - pytorch
   - torchvision
   - tabulate
