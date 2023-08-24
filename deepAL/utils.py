@@ -39,15 +39,15 @@ def get_handler(name):
     elif name == 'CIFAR10':
         return CIFAR10_Handler
 
-def get_dataset(name):
+def get_dataset(name, use_validation_set=False):
     if name == 'MNIST':
-        return get_MNIST(get_handler(name))
+        return get_MNIST(get_handler(name), use_validation_set)
     elif name == 'FashionMNIST':
-        return get_FashionMNIST(get_handler(name))
+        return get_FashionMNIST(get_handler(name), use_validation_set)
     elif name == 'SVHN':
-        return get_SVHN(get_handler(name))
+        return get_SVHN(get_handler(name), use_validation_set)
     elif name == 'CIFAR10':
-        return get_CIFAR10(get_handler(name))
+        return get_CIFAR10(get_handler(name), use_validation_set)
     else:
         raise NotImplementedError
         

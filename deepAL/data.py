@@ -56,22 +56,40 @@ class Data:
         return 1.0 * (self.Y_test==preds).sum().item() / self.n_test
 
     
-def get_MNIST(handler):
+def get_MNIST(handler, use_validation_set):
     raw_train = datasets.MNIST('./data/MNIST', train=True, download=True)
     raw_test = datasets.MNIST('./data/MNIST', train=False, download=True)
-    return Data(raw_train.data[:40000], raw_train.targets[:40000], raw_test.data[:40000], raw_test.targets[:40000], handler)
+    data = get_data(raw_train, raw_test, handler, use_validation_set)
+    return data
 
-def get_FashionMNIST(handler):
+def get_FashionMNIST(handler, use_validation_set):
     raw_train = datasets.FashionMNIST('./data/FashionMNIST', train=True, download=True)
     raw_test = datasets.FashionMNIST('./data/FashionMNIST', train=False, download=True)
-    return Data(raw_train.data[:40000], raw_train.targets[:40000], raw_test.data[:40000], raw_test.targets[:40000], handler)
+    data = get_data(raw_train, raw_test, handler, use_validation_set)
+    return data
 
-def get_SVHN(handler):
+def get_SVHN(handler, use_validation_set):
     data_train = datasets.SVHN('./data/SVHN', split='train', download=True)
     data_test = datasets.SVHN('./data/SVHN', split='test', download=True)
-    return Data(data_train.data[:40000], torch.from_numpy(data_train.labels)[:40000], data_test.data[:40000], torch.from_numpy(data_test.labels)[:40000], handler)
+    data = get_data(data_train, data_test, handler, use_validation_set)
+    return data
 
-def get_CIFAR10(handler):
+def get_CIFAR10(handler, use_validation_set):
     data_train = datasets.CIFAR10('./data/CIFAR10', train=True, download=True)
     data_test = datasets.CIFAR10('./data/CIFAR10', train=False, download=True)
-    return Data(data_train.data[:40000], torch.LongTensor(data_train.targets)[:40000], data_test.data[:40000], torch.LongTensor(data_test.targets)[:40000], handler)
+    data = get_data(data_train, data_test, handler, use_validation_set)
+    return data
+
+def get_data(raw_train, raw_test, handler, use_validation_set):
+    train_data = raw_train.data[:40000]
+    train_targets = raw_train.targets[:40000]
+    if use_validation_set:
+        test_data = train_data[30000:]
+        test_targets = train_targets[30000:]
+        train_data = train_data[:30000]
+        train_targets = train_targets[:30000]
+    else:
+        test_data = raw_test.data[:40000]
+        test_targets = raw_test.targets[:40000]
+    data = Data(train_data, train_targets, test_data, test_targets, handler)
+    return data

@@ -23,6 +23,7 @@ def parse_args():
     parser.add_argument('--update_size', type=int, default=256)
     parser.add_argument('--threshold', type=float, default=None, help='sampling threshold for AL method')
     parser.add_argument('--device', type=str, default='cuda:0')
+    parser.add_argument('--use_validation_set', action='store_true')
 
     parser.add_argument('--strategy_name', type=str, default="RandomSampling", 
                         choices=[
@@ -48,7 +49,7 @@ def parse_args():
 def do_experiment(args):
     seed_everything(args.seed)
     device = torch.device(args.device)
-    dataset = get_dataset(args.dataset_name)
+    dataset = get_dataset(args.dataset_name, args.use_validation_set)
     net = get_net(args.dataset_name, device)
     strategy_class = get_strategy(args.strategy_name)
     if strategy_class.__name__ == 'SelfLabelingSelectiveSampling':

@@ -10,6 +10,8 @@ def main():
     prediction_threshold_inteval = get_prediction_threshold_inteval(args.strategy_name)
     thresholds = [sample_prediction_threshold(prediction_threshold_inteval) for _ in range(20)]
 
+
+    args.use_validation_set = True
     for prediction_threshold in thresholds:
         args.prediction_threshold = prediction_threshold
 
@@ -26,6 +28,7 @@ def main():
             best_threshold = prediction_threshold
 
     args.prediction_threshold = best_threshold
+    args.use_validation_set = False
     print(f'dataset_name = {args.dataset_name} method = {args.strategy_name} random_seed = {args.random_seed} base model = {args.base_model} seed size = {args.seed_size} budget = {args.budget} best prediction threshold = {best_threshold}')
 
     for random_seed in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
