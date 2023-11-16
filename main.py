@@ -4,24 +4,24 @@ import math
 import os
 import random
 
-# import mkl
-import numpy as np
-import sklearn.model_selection
-import torch
-import tqdm
-from sklearn.metrics import balanced_accuracy_score
-from sklearn.naive_bayes import GaussianNB
-from sklearn.neural_network import MLPClassifier
+# # import mkl
+# import numpy as np
+# import sklearn.model_selection
+# import torch
+# import tqdm
+# from sklearn.metrics import balanced_accuracy_score
+# from sklearn.naive_bayes import GaussianNB
+# from sklearn.neural_network import MLPClassifier
 
-import active_learning_strategies
-import data.load_data
-import self_labeling_strategies
-import utils.diversity
-import utils.ensemble
-import utils.mlp_pytorch
-import utils.new_model
-import utils.stream
-# from utils.online_bagging import OnlineBagging
+# import active_learning_strategies
+# import data.load_data
+# import self_labeling_strategies
+# import utils.diversity
+# import utils.ensemble
+# import utils.mlp_pytorch
+# import utils.new_model
+# import utils.stream
+# # from utils.online_bagging import OnlineBagging
 
 
 def main():
@@ -34,7 +34,8 @@ def do_experiment(args):
     # mkl.set_num_threads(20)
     seed_everything(args.random_seed)
 
-    train_data, train_target, test_data, test_target, num_classes = data.load_data.get_data(args.dataset_name, args.random_seed)
+    train_data, train_target, test_data, test_target, num_classes = data.load_data.get_data(
+        args.dataset_name, args.random_seed)
 
     # def undersapmling(data, target):
     #     class_1 = np.argwhere(target == 1)[:, 0]
@@ -63,7 +64,8 @@ def do_experiment(args):
         model = get_base_model(args)
 
     if args.method in ('all_labeled', 'all_labeled_ensemble'):
-        acc = training_full_dataset(model, train_data, train_target, test_data, test_target)
+        acc = training_full_dataset(
+            model, train_data, train_target, test_data, test_target)
         budget_end = -1
         budget_after = 0
         incorrect_fraction = []
@@ -84,7 +86,8 @@ def parse_args():
         'firewall', 'chess', 'nursery',
         'poker', 'mushroom', 'wine', 'abalone'
     ], required=True)
-    parser.add_argument('--seed_size', type=int, default=200, help='seed size for model training')
+    parser.add_argument('--seed_size', type=int, default=200,
+                        help='seed size for model training')
     parser.add_argument('--random_seed', type=int, default=42)
     parser.add_argument('--budget', type=float, default=0.3)
 
@@ -93,17 +96,21 @@ def parse_args():
                         'random', 'fixed_uncertainty', 'variable_uncertainty', 'classification_margin',
                         'vote_entropy', 'consensus_entropy', 'max_disagreement', 'min_margin'),
                         default='ours')
-    parser.add_argument('--base_model', choices=('mlp', 'ng', 'online_bagging'), default='mlp')
+    parser.add_argument('--base_model', choices=('mlp',
+                        'ng', 'online_bagging'), default='mlp')
     parser.add_argument('--prediction_threshold', type=float, default=0.6)
     parser.add_argument('--ensemble_diversify', action='store_true')
     parser.add_argument('--num_classifiers', type=int, default=9)
-    parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for Adam optimizer')
-    parser.add_argument('--lr', type=float, default=0.001, help='learning rate for MLP')
+    parser.add_argument('--beta1', type=float, default=0.9,
+                        help='beta1 for Adam optimizer')
+    parser.add_argument('--lr', type=float, default=0.001,
+                        help='learning rate for MLP')
     parser.add_argument('--batch_mode', action='store_true')
     parser.add_argument('--batch_size', default=50, type=int)
 
     parser.add_argument('--debug', action='store_true')
-    parser.add_argument('--verbose', type=distutils.util.strtobool, default=True)
+    parser.add_argument(
+        '--verbose', type=distutils.util.strtobool, default=True)
 
     args = parser.parse_args()
     return args
@@ -168,25 +175,33 @@ def training_stream(train_stream, seed_data, seed_target, test_data, test_target
 
         if args.method in ('ours', ):
             if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
-                seed_data, seed_target = update_training_data(seed_data, seed_target, obj, target)
+                seed_data, seed_target = update_training_data(
+                    seed_data, seed_target, obj, target)
                 lambdas = np.concatenate((lambdas, [1.0]), axis=0)
-                seed_data, seed_target, lambdas = partial_fit(seed_data, seed_target, model, args, lambdas)
+                seed_data, seed_target, lambdas = partial_fit(
+                    seed_data, seed_target, model, args, lambdas)
                 current_budget -= 1
                 if args.method == 'ours':
                     strategy.last_predictions.append(int(target))
             else:
-                train, label, poisson_lambda = strategy.use_self_labeling(obj, current_budget, args.budget)
+                train, label, poisson_lambda = strategy.use_self_labeling(
+                    obj, current_budget, args.budget)
                 if train:
-                    seed_data, seed_target = update_training_data(seed_data, seed_target, obj, label)
+                    seed_data, seed_target = update_training_data(
+                        seed_data, seed_target, obj, label)
                     if label != target:
                         incorrect_num += 1
-                    lambdas = np.concatenate((lambdas, [poisson_lambda]), axis=0)
-                    seed_data, seed_target, lambdas = partial_fit(seed_data, seed_target, model, args, lambdas)
+                    lambdas = np.concatenate(
+                        (lambdas, [poisson_lambda]), axis=0)
+                    seed_data, seed_target, lambdas = partial_fit(
+                        seed_data, seed_target, model, args, lambdas)
             incorrect_fraction.append(incorrect_num / len(seed_data))
         else:  # active learning strategy
             if current_budget > 0 and strategy.request_label(obj, current_budget, args.budget):
-                seed_data, seed_target = update_training_data(seed_data, seed_target, obj, target)
-                seed_data, seed_target, lambdas = partial_fit(seed_data, seed_target, model, args)
+                seed_data, seed_target = update_training_data(
+                    seed_data, seed_target, obj, target)
+                seed_data, seed_target, lambdas = partial_fit(
+                    seed_data, seed_target, model, args)
                 current_budget -= 1
 
         if current_budget == 0:
@@ -227,7 +242,8 @@ def update_training_data(seed_data, seed_target, obj, target):
 
 def get_strategy(model, args, num_classes):
     if args.method == 'ours':
-        strategy = self_labeling_strategies.Ours(model, num_classes, args.prediction_threshold)
+        strategy = self_labeling_strategies.Ours(
+            model, num_classes, args.prediction_threshold)
     elif args.method == 'random':
         strategy = active_learning_strategies.RandomSampling(model)
     elif args.method == 'fixed_uncertainty':
@@ -237,15 +253,20 @@ def get_strategy(model, args, num_classes):
         strategy = active_learning_strategies.VariableUncertainty(
             model, args.prediction_threshold)
     elif args.method == 'classification_margin':
-        strategy = active_learning_strategies.ClassificationMargin(model, args.prediction_threshold)
+        strategy = active_learning_strategies.ClassificationMargin(
+            model, args.prediction_threshold)
     elif args.method == 'vote_entropy':
-        strategy = active_learning_strategies.VoteEntropy(model, args.prediction_threshold)
+        strategy = active_learning_strategies.VoteEntropy(
+            model, args.prediction_threshold)
     elif args.method == 'consensus_entropy':
-        strategy = active_learning_strategies.ConsensusEntropy(model, args.prediction_threshold, num_classes)
+        strategy = active_learning_strategies.ConsensusEntropy(
+            model, args.prediction_threshold, num_classes)
     elif args.method == 'max_disagreement':
-        strategy = active_learning_strategies.MaxDisagreement(model, args.prediction_threshold)
+        strategy = active_learning_strategies.MaxDisagreement(
+            model, args.prediction_threshold)
     elif args.method == 'min_margin':
-        strategy = active_learning_strategies.MinMargin(model, args.prediction_threshold)
+        strategy = active_learning_strategies.MinMargin(
+            model, args.prediction_threshold)
     return strategy
 
 
@@ -253,8 +274,10 @@ def save_results(args, acc, budget_end, incorrect_fraction):
     os.makedirs(f'results/{args.method}', exist_ok=True)
     experiment_parameters = f'{args.base_model}_{args.dataset_name}_seed_{args.seed_size}_budget_{args.budget}_random_seed_{args.random_seed}'
     np.save(f'results/{args.method}/acc_{experiment_parameters}.npy', acc)
-    np.save(f'results/{args.method}/budget_end_{experiment_parameters}.npy', budget_end)
-    np.save(f'results/{args.method}/incorrect_fraction_{experiment_parameters}.npy', incorrect_fraction)
+    np.save(
+        f'results/{args.method}/budget_end_{experiment_parameters}.npy', budget_end)
+    np.save(
+        f'results/{args.method}/incorrect_fraction_{experiment_parameters}.npy', incorrect_fraction)
 
 
 if __name__ == '__main__':

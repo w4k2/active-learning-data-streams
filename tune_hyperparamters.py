@@ -5,18 +5,23 @@ from main import *
 
 def main():
     args = parse_args()
+    print(args.seed_size)
+    exit()
 
     best_acc = 0.0
     best_threshold = 0.0
 
-    prediction_threshold_inteval = get_prediction_threshold_inteval(args.method)
-    thresholds = [sample_prediction_threshold(prediction_threshold_inteval) for _ in range(20)]
+    prediction_threshold_inteval = get_prediction_threshold_inteval(
+        args.method)
+    thresholds = [sample_prediction_threshold(
+        prediction_threshold_inteval) for _ in range(20)]
 
     for prediction_threshold in thresholds:
         args.prediction_threshold = prediction_threshold
 
         avrg_acc = 0.0
-        print(f'\nnew experiment with prediction threshold = {prediction_threshold}')
+        print(
+            f'\nnew experiment with prediction threshold = {prediction_threshold}')
         for random_seed in [42, 43, 44]:
             args.random_seed = random_seed
             acc, budget_end, budget_after = do_experiment(args)
@@ -54,7 +59,8 @@ def get_prediction_threshold_inteval(method_name):
     elif method_name == 'min_margin':
         return (0.0, 0.5)
     else:
-        raise ValueError(f'Undefined hyperparameter interval for {method_name} algorithm')
+        raise ValueError(
+            f'Undefined hyperparameter interval for {method_name} algorithm')
 
 
 def sample_prediction_threshold(prediction_threshold_interval):
