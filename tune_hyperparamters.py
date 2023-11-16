@@ -5,8 +5,6 @@ from main import *
 
 def main():
     args = parse_args()
-    print(args.seed_size)
-    exit()
 
     best_acc = 0.0
     best_threshold = 0.0

@@ -4,24 +4,24 @@ import math
 import os
 import random
 
-# # import mkl
-# import numpy as np
-# import sklearn.model_selection
-# import torch
-# import tqdm
-# from sklearn.metrics import balanced_accuracy_score
-# from sklearn.naive_bayes import GaussianNB
-# from sklearn.neural_network import MLPClassifier
+# import mkl
+import numpy as np
+import sklearn.model_selection
+import torch
+import tqdm
+from sklearn.metrics import balanced_accuracy_score
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neural_network import MLPClassifier
 
-# import active_learning_strategies
-# import data.load_data
-# import self_labeling_strategies
-# import utils.diversity
-# import utils.ensemble
-# import utils.mlp_pytorch
-# import utils.new_model
-# import utils.stream
-# # from utils.online_bagging import OnlineBagging
+import active_learning_strategies
+import data.load_data
+import self_labeling_strategies
+import utils.diversity
+import utils.ensemble
+import utils.mlp_pytorch
+import utils.new_model
+import utils.stream
+# from utils.online_bagging import OnlineBagging
 
 
 def main():
