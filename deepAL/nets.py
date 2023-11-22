@@ -6,18 +6,20 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
+
 class Net:
     def __init__(self, net, params, device, verbose_training=False):
         self.net = net
         self.params = params
         self.device = device
         self.verbose_training = verbose_training
-        
+
     def train(self, data):
         n_epoch = self.params['n_epoch']
         self.clf = self.net().to(self.device)
         self.clf.train()
-        optimizer = optim.SGD(self.clf.parameters(), **self.params['optimizer_args'])
+        optimizer = optim.SGD(self.clf.parameters(), **
+                              self.params['optimizer_args'])
 
         loader = DataLoader(data, shuffle=True, **self.params['train_args'])
         epochs_iter = range(1, n_epoch+1)
@@ -31,8 +33,6 @@ class Net:
                 loss = F.cross_entropy(out, y)
                 loss.backward()
                 optimizer.step()
-                break
-            break
 
     def predict(self, data):
         self.clf.eval()
@@ -45,7 +45,7 @@ class Net:
                 pred = out.max(1)[1]
                 preds[idxs] = pred.cpu()
         return preds
-    
+
     def predict_prob(self, data: Dataset):
         self.clf.eval()
         probs = torch.zeros([len(data), len(np.unique(data.Y))])
@@ -57,7 +57,7 @@ class Net:
                 prob = F.softmax(out, dim=1)
                 probs[idxs] = prob.cpu()
         return probs
-    
+
     def predict_prob_raw_data(self, x: torch.TensorType):
         self.clf.eval()
         with torch.no_grad():
@@ -66,7 +66,7 @@ class Net:
             prob = F.softmax(out, dim=1)
             prob = prob.cpu()
         return prob
-    
+
     def predict_prob_dropout(self, data, n_drop=10):
         self.clf.train()
         probs = torch.zeros([len(data), len(np.unique(data.Y))])
@@ -80,7 +80,7 @@ class Net:
                     probs[idxs] += prob.cpu()
         probs /= n_drop
         return probs
-    
+
     def predict_prob_dropout_split(self, data: Dataset, n_drop=10):
         self.clf.train()
         probs = torch.zeros([n_drop, len(data), len(np.unique(data.Y))])
@@ -105,7 +105,7 @@ class Net:
                 probs.append(F.softmax(out, dim=1).cpu())
         probs = torch.stack(probs, dim=0)
         return probs
-    
+
     def get_embeddings(self, data):
         self.clf.eval()
         embeddings = torch.zeros([len(data), self.clf.get_embedding_dim()])
@@ -116,7 +116,7 @@ class Net:
                 out, e1 = self.clf(x)
                 embeddings[idxs] = e1.cpu()
         return embeddings
-        
+
 
 class MNIST_Net(nn.Module):
     def __init__(self):
@@ -138,6 +138,7 @@ class MNIST_Net(nn.Module):
 
     def get_embedding_dim(self):
         return 50
+
 
 class SVHN_Net(nn.Module):
     def __init__(self):
@@ -163,6 +164,7 @@ class SVHN_Net(nn.Module):
 
     def get_embedding_dim(self):
         return 50
+
 
 class CIFAR10_Net(nn.Module):
     def __init__(self):
