@@ -20,7 +20,7 @@ def main():
         print(
             f'\nnew experiment with prediction threshold = {prediction_threshold}')
         for random_seed in [42, 43, 44]:
-            args.random_seed = random_seed
+            args.seed = random_seed
             acc, budget_end = do_experiment(args)
             avrg_acc += acc[-1]
         avrg_acc /= 3
@@ -34,7 +34,7 @@ def main():
     print(f'dataset_name = {args.dataset_name} method = {args.strategy_name} random_seed = {args.random_seed} seed size = {args.n_init_labeled} budget = {args.budget} best prediction threshold = {best_threshold}')
 
     for random_seed in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
-        args.random_seed = random_seed
+        args.seed = random_seed
         acc, budget_end = do_experiment(args)
         save_results(args, acc, budget_end)
 
