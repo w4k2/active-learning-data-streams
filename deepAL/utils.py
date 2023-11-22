@@ -3,31 +3,32 @@ from handlers import MNIST_Handler, SVHN_Handler, CIFAR10_Handler
 from data import get_MNIST, get_FashionMNIST, get_SVHN, get_CIFAR10
 from nets import Net, MNIST_Net, SVHN_Net, CIFAR10_Net
 from query_strategies import RandomSampling, LeastConfidence, MarginSampling, EntropySampling, \
-                             LeastConfidenceDropout, MarginSamplingDropout, EntropySamplingDropout, \
-                             KMeansSampling, KCenterGreedy, BALDDropout, \
-                             AdversarialBIM, AdversarialDeepFool, ConsensusEntropy, SelfLabelingSelectiveSampling
+    LeastConfidenceDropout, MarginSamplingDropout, EntropySamplingDropout, \
+    KMeansSampling, KCenterGreedy, BALDDropout, \
+    AdversarialBIM, AdversarialDeepFool, ConsensusEntropy, SelfLabelingSelectiveSampling
 
 params = {'MNIST':
-              {'n_epoch': 10, 
-               'train_args':{'batch_size': 64, 'num_workers': 10},
-               'test_args':{'batch_size': 1000, 'num_workers': 10},
-               'optimizer_args':{'lr': 0.01, 'momentum': 0.5}},
+          {'n_epoch': 10,
+           'train_args': {'batch_size': 64, 'num_workers': 4},
+           'test_args': {'batch_size': 1000, 'num_workers': 4},
+           'optimizer_args': {'lr': 0.01, 'momentum': 0.5}},
           'FashionMNIST':
-              {'n_epoch': 10, 
-               'train_args':{'batch_size': 64, 'num_workers': 10},
-               'test_args':{'batch_size': 1000, 'num_workers': 10},
-               'optimizer_args':{'lr': 0.01, 'momentum': 0.5}},
+              {'n_epoch': 10,
+               'train_args': {'batch_size': 64, 'num_workers': 4},
+               'test_args': {'batch_size': 1000, 'num_workers': 4},
+               'optimizer_args': {'lr': 0.01, 'momentum': 0.5}},
           'SVHN':
-              {'n_epoch': 20, 
-               'train_args':{'batch_size': 64, 'num_workers': 10},
-               'test_args':{'batch_size': 1000, 'num_workers': 10},
-               'optimizer_args':{'lr': 0.01, 'momentum': 0.5}},
+              {'n_epoch': 20,
+               'train_args': {'batch_size': 64, 'num_workers': 4},
+               'test_args': {'batch_size': 1000, 'num_workers': 4},
+               'optimizer_args': {'lr': 0.01, 'momentum': 0.5}},
           'CIFAR10':
-              {'n_epoch': 20, 
-               'train_args':{'batch_size': 64, 'num_workers': 10},
-               'test_args':{'batch_size': 1000, 'num_workers': 10},
-               'optimizer_args':{'lr': 0.05, 'momentum': 0.3}}
+              {'n_epoch': 20,
+               'train_args': {'batch_size': 64, 'num_workers': 4},
+               'test_args': {'batch_size': 1000, 'num_workers': 4},
+               'optimizer_args': {'lr': 0.05, 'momentum': 0.3}}
           }
+
 
 def get_handler(name):
     if name == 'MNIST':
@@ -38,6 +39,7 @@ def get_handler(name):
         return SVHN_Handler
     elif name == 'CIFAR10':
         return CIFAR10_Handler
+
 
 def get_dataset(name, use_validation_set=False):
     if name == 'MNIST':
@@ -50,7 +52,8 @@ def get_dataset(name, use_validation_set=False):
         return get_CIFAR10(get_handler(name), use_validation_set)
     else:
         raise NotImplementedError
-        
+
+
 def get_net(name, device):
     if name == 'MNIST':
         return Net(MNIST_Net, params[name], device)
@@ -62,9 +65,11 @@ def get_net(name, device):
         return Net(CIFAR10_Net, params[name], device)
     else:
         raise NotImplementedError
-    
+
+
 def get_params(name):
     return params[name]
+
 
 def get_strategy(name):
     if name == "RandomSampling":
@@ -97,7 +102,7 @@ def get_strategy(name):
         return SelfLabelingSelectiveSampling
     else:
         raise NotImplementedError
-    
+
 # albl_list = [MarginSampling(X_tr, Y_tr, idxs_lb, net, handler, args),
 #              KMeansSampling(X_tr, Y_tr, idxs_lb, net, handler, args)]
 # strategy = ActiveLearningByLearning(X_tr, Y_tr, idxs_lb, net, handler, args, strategy_list=albl_list, delta=0.1)
