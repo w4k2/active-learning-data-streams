@@ -118,8 +118,8 @@ def training_stream(args, dataset, strategy):
 
             preds = strategy.predict(dataset.get_test_data())
             last_acc = dataset.cal_test_acc(preds)
-            pbar.set_description(
-                "test acc {:.4f}, remaning budget {}".format(last_acc, current_budget))
+            # pbar.set_description(
+            #     "test acc {:.4f}, remaning budget {}".format(last_acc, current_budget))
 
         acc_list.append(last_acc)
         if current_budget == 0:
