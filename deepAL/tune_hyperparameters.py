@@ -20,6 +20,7 @@ def main():
             args.seed = random_seed
             acc, budget_end = do_experiment(args)
             avrg_acc += acc[-1]
+            # break
         avrg_acc /= 3
 
         if avrg_acc > best_acc:
@@ -28,7 +29,7 @@ def main():
 
     args.threshold = best_threshold
     args.use_validation_set = False
-    print(f'dataset_name = {args.dataset_name} method = {args.strategy_name} random_seed = {args.random_seed} seed size = {args.n_init_labeled} budget = {args.budget} best prediction threshold = {best_threshold}')
+    print(f'dataset_name = {args.dataset_name} method = {args.strategy_name} seed size = {args.n_init_labeled} budget = {args.budget} best prediction threshold = {best_threshold}')
 
     for random_seed in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
         args.seed = random_seed
