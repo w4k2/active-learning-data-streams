@@ -140,10 +140,8 @@ def training_stream(args, dataset, strategy):
 def save_results(args, acc, budget_end, incorrect_fraction=None):
     os.makedirs(f'results/{args.strategy_name}', exist_ok=True)
     experiment_parameters = f'{args.dataset_name}_n_init_labeled_{args.n_init_labeled}_budget_{args.budget}_random_seed_{args.seed}_update_size_{args.update_size}'
-    np.save(
-        f'results/{args.strategy_name}/acc_{experiment_parameters}.npy', acc)
-    np.save(
-        f'results/{args.strategy_name}/budget_end_{experiment_parameters}.npy', budget_end)
+    np.save(f'results/{args.strategy_name}/acc_{experiment_parameters}.npy', acc)
+    np.save(f'results/{args.strategy_name}/budget_end_{experiment_parameters}.npy', budget_end)
     # np.save(f'results/{args.strategy_name}/incorrect_fraction_{experiment_parameters}.npy', incorrect_fraction)
 
 

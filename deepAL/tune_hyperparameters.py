@@ -7,18 +7,15 @@ def main():
     best_acc = 0.0
     best_threshold = 0.0
 
-    prediction_threshold_inteval = get_prediction_threshold_inteval(
-        args.strategy_name)
-    thresholds = [sample_prediction_threshold(
-        prediction_threshold_inteval) for _ in range(20)]
+    prediction_threshold_inteval = get_prediction_threshold_inteval(args.strategy_name)
+    thresholds = [sample_prediction_threshold(prediction_threshold_inteval) for _ in range(20)]
 
     args.use_validation_set = True
-    for prediction_threshold in thresholds:
-        args.prediction_threshold = prediction_threshold
+    for threshold in thresholds:
+        args.threshold = threshold
 
         avrg_acc = 0.0
-        print(
-            f'\nnew experiment with prediction threshold = {prediction_threshold}')
+        print(f'\nnew experiment with prediction threshold = {threshold}')
         for random_seed in [42, 43, 44]:
             args.seed = random_seed
             acc, budget_end = do_experiment(args)
@@ -27,9 +24,9 @@ def main():
 
         if avrg_acc > best_acc:
             best_acc = avrg_acc
-            best_threshold = prediction_threshold
+            best_threshold = threshold
 
-    args.prediction_threshold = best_threshold
+    args.threshold = best_threshold
     args.use_validation_set = False
     print(f'dataset_name = {args.dataset_name} method = {args.strategy_name} random_seed = {args.random_seed} seed size = {args.n_init_labeled} budget = {args.budget} best prediction threshold = {best_threshold}')
 
